@@ -37,6 +37,7 @@ public:
     {
         dim_     = static_cast<int>(input_points.rows());
         num_pts_ = static_cast<int>(input_points.cols());
+        built_block_size_ = std::max(1, block_size); // snapshot: queries must match the built layout
 
         std::vector<int> perm(num_pts_);
         std::iota(perm.begin(), perm.end(), 0);
@@ -53,6 +54,13 @@ public:
 
     int size() const { return num_pts_; }
     int dim() const  { return dim_; }
+
+    // Structure inspection (e.g. for visualization): points permuted into
+    // tree order, the internal->external index map, and the leaf-block size
+    // the current layout was built with.
+    const Eigen::MatrixXd& ordered_points() const     { return points_; }
+    int external_index( int internal_index ) const    { return perm_i2e_(internal_index); }
+    int built_block_size() const                      { return built_block_size_; }
 
     // k nearest neighbors of each query point (columns). Returns (indices,
     // squared distances), each of shape (k_eff, num_queries) with
@@ -115,7 +123,7 @@ private:
                         const Eigen::Ref<const Eigen::MatrixXd>& pts,
                         std::vector<int>& perm )
     {
-        if ( stop - start <= block_size )
+        if ( stop - start <= built_block_size_ )
         {
             return; // leaf block: order irrelevant
         }
@@ -130,7 +138,7 @@ private:
     void query_subtree( const Eigen::Ref<const Eigen::VectorXd>& q,
                         KnnQueue& best, int start, int stop, int depth ) const
     {
-        if ( stop - start <= block_size )
+        if ( stop - start <= built_block_size_ )
         {
             for ( int ii = start; ii < stop; ++ii )
             {
@@ -181,6 +189,7 @@ private:
 
     int             dim_     = 0;
     int             num_pts_ = 0;
+    int             built_block_size_ = 32; // block_size snapshotted at build time
     Eigen::MatrixXd points_;   // (dim, n), permuted into tree order
     Eigen::VectorXi perm_i2e_; // internal -> external index
 };

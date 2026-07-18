@@ -12,7 +12,8 @@ add_executable(etree_tests
     test_kd_tree.cpp
     test_batch_picker.cpp
     test_simplex_mesh.cpp
-    test_lp_cells.cpp)
+    test_lp_cells.cpp
+    test_plot2d.cpp)
 target_link_libraries(etree_tests PRIVATE etree::etree)
 target_include_directories(etree_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
 target_compile_options(etree_tests PRIVATE
