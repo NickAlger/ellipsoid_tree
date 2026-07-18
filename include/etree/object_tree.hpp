@@ -222,8 +222,10 @@ class BoxTree : public detail::TreeBatchQueries<BoxTree>
 public:
     bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
+    /// Empty tree (indexes no boxes).
     BoxTree() = default;
 
+    /// Index a collection of axis-aligned boxes, building an AABBTree over them.
     explicit BoxTree( std::vector<Box> boxes )
         : objects_(std::move(boxes))
     {
@@ -243,6 +245,7 @@ public:
         aabb_.build(lo, hi);
     }
 
+    /// Index boxes given as columns of lower- and upper-corner matrices (dim x n).
     BoxTree( const Eigen::Ref<const Eigen::MatrixXd>& lo,
              const Eigen::Ref<const Eigen::MatrixXd>& hi )
         : BoxTree([&]
@@ -257,49 +260,62 @@ public:
     {
     }
 
+    /// Number of indexed boxes.
     int size() const { return static_cast<int>(objects_.size()); }
+    /// Spatial dimension of the indexed boxes.
     int dim() const  { return aabb_.dim(); }
+    /// The ii-th indexed box.
     const Box& object( int ii ) const           { return objects_[ii]; }
+    /// All indexed boxes, in index order.
     const std::vector<Box>& objects() const     { return objects_; }
+    /// The underlying AABB tree over the elements' bounding boxes.
     const AABBTree& tree() const                { return aabb_; }
 
+    /// Indices of the boxes containing the query point.
     std::vector<int> collisions( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         return detail::tree_collisions(aabb_, detail::point_node_pred(p),
             [&]( int e ) { return intersects(p, objects_[e]); });
     }
+    /// Indices of the boxes intersecting the query box.
     std::vector<int> collisions( const Box& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the boxes intersecting the query ball.
     std::vector<int> collisions( const Ball& q ) const
     {
         return detail::tree_collisions(aabb_, detail::ball_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the boxes intersecting the query ellipsoid at scale tau.
     std::vector<int> collisions( const Ellipsoid& q, double tau ) const
     {
         return detail::tree_collisions(aabb_,
             detail::ellipsoid_node_pred(q, tau, exact_ellipsoid_pruning),
             [&]( int e ) { return intersects(objects_[e], q, tau); });
     }
+    /// Indices of the boxes intersecting the query simplex.
     std::vector<int> collisions( const Simplex& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(bounding_box(q)),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the boxes intersecting the query segment.
     std::vector<int> collisions( const Segment& q ) const
     {
         return detail::tree_collisions(aabb_, detail::segment_node_pred(q),
             [&]( int e ) { return intersects(q, objects_[e]); });
     }
+    /// Indices of the boxes intersecting the query halfspace.
     std::vector<int> collisions( const Halfspace& q ) const
     {
         return detail::tree_collisions(aabb_, detail::halfspace_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
 
+    /// Every intersecting pair within the family of boxes (the overlap graph).
     std::vector<std::pair<int, int>> self_collision_pairs() const
     {
         return detail::collect_self_pairs(aabb_,
@@ -322,8 +338,10 @@ class BallTree : public detail::TreeBatchQueries<BallTree>
 public:
     bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
+    /// Empty tree (indexes no balls).
     BallTree() = default;
 
+    /// Index a collection of balls, building an AABBTree over their bounding boxes.
     explicit BallTree( std::vector<Ball> balls )
         : objects_(std::move(balls))
     {
@@ -363,49 +381,62 @@ public:
     {
     }
 
+    /// Number of indexed balls.
     int size() const { return static_cast<int>(objects_.size()); }
+    /// Spatial dimension of the indexed balls.
     int dim() const  { return aabb_.dim(); }
+    /// The ii-th indexed ball.
     const Ball& object( int ii ) const          { return objects_[ii]; }
+    /// All indexed balls, in index order.
     const std::vector<Ball>& objects() const    { return objects_; }
+    /// The underlying AABB tree over the elements' bounding boxes.
     const AABBTree& tree() const                { return aabb_; }
 
+    /// Indices of the balls containing the query point.
     std::vector<int> collisions( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         return detail::tree_collisions(aabb_, detail::point_node_pred(p),
             [&]( int e ) { return intersects(p, objects_[e]); });
     }
+    /// Indices of the balls intersecting the query box.
     std::vector<int> collisions( const Box& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(q),
             [&]( int e ) { return intersects(q, objects_[e]); });
     }
+    /// Indices of the balls intersecting the query ball.
     std::vector<int> collisions( const Ball& q ) const
     {
         return detail::tree_collisions(aabb_, detail::ball_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the balls intersecting the query ellipsoid at scale tau.
     std::vector<int> collisions( const Ellipsoid& q, double tau ) const
     {
         return detail::tree_collisions(aabb_,
             detail::ellipsoid_node_pred(q, tau, exact_ellipsoid_pruning),
             [&]( int e ) { return intersects(objects_[e], q, tau); });
     }
+    /// Indices of the balls intersecting the query simplex.
     std::vector<int> collisions( const Simplex& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(bounding_box(q)),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the balls intersecting the query segment.
     std::vector<int> collisions( const Segment& q ) const
     {
         return detail::tree_collisions(aabb_, detail::segment_node_pred(q),
             [&]( int e ) { return intersects(q, objects_[e]); });
     }
+    /// Indices of the balls intersecting the query halfspace.
     std::vector<int> collisions( const Halfspace& q ) const
     {
         return detail::tree_collisions(aabb_, detail::halfspace_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
 
+    /// Every intersecting pair within the family of balls (the overlap graph).
     std::vector<std::pair<int, int>> self_collision_pairs() const
     {
         return detail::collect_self_pairs(aabb_,
@@ -428,8 +459,10 @@ class EllipsoidTree : public detail::TreeBatchQueries<EllipsoidTree>
 public:
     bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
+    /// Empty tree (indexes no ellipsoids).
     EllipsoidTree() = default;
 
+    /// Index a family of ellipsoids at the shared scale tau, precomputing each Sigma^{-1} and building the tree over their tau-scaled bounding boxes.
     EllipsoidTree( std::vector<Ellipsoid> ellipsoids, double tau, int num_threads = 0 )
         : objects_(std::move(ellipsoids)), tau_(tau)
     {
@@ -458,12 +491,19 @@ public:
         rebuild_boxes();
     }
 
+    /// Number of indexed ellipsoids.
     int size() const   { return static_cast<int>(objects_.size()); }
+    /// Spatial dimension of the indexed ellipsoids.
     int dim() const    { return aabb_.dim(); }
+    /// The shared ellipsoid scale tau fixed at construction (used for the leaf boxes).
     double tau() const { return tau_; }
+    /// The ii-th indexed ellipsoid.
     const Ellipsoid& object( int ii ) const          { return objects_[ii]; }
+    /// All indexed ellipsoids, in index order.
     const std::vector<Ellipsoid>& objects() const    { return objects_; }
+    /// The underlying AABB tree over the elements' bounding boxes.
     const AABBTree& tree() const                     { return aabb_; }
+    /// The precomputed inverse Sigma^{-1} of the ii-th ellipsoid's covariance.
     const Eigen::MatrixXd& sigma_inverse( int ii ) const { return sigma_inv_[ii]; }
 
     /// Rebuild the leaf boxes (and tree) at a new scale; Sigma^{-1} is unchanged.
@@ -477,8 +517,10 @@ public:
         rebuild_boxes();
     }
 
+    /// Indices of the ellipsoids (at the build tau) that contain the query point.
     std::vector<int> collisions( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     { return collisions(p, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) that contain the query point.
     std::vector<int> collisions( const Eigen::Ref<const Eigen::VectorXd>& p, double tau ) const
     {
         check_query_tau(tau);
@@ -491,7 +533,9 @@ public:
             });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query box.
     std::vector<int> collisions( const Box& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) intersecting the query box.
     std::vector<int> collisions( const Box& q, double tau ) const
     {
         check_query_tau(tau);
@@ -505,7 +549,9 @@ public:
             });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query ball.
     std::vector<int> collisions( const Ball& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) intersecting the query ball.
     std::vector<int> collisions( const Ball& q, double tau ) const
     {
         check_query_tau(tau);
@@ -513,7 +559,9 @@ public:
             [&]( int e ) { return intersects(q, objects_[e], tau); });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query ellipsoid at that same scale.
     std::vector<int> collisions( const Ellipsoid& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids intersecting the query ellipsoid, both taken at scale tau (at most the build tau).
     std::vector<int> collisions( const Ellipsoid& q, double tau ) const
     {
         check_query_tau(tau);
@@ -522,7 +570,9 @@ public:
             [&]( int e ) { return intersects(objects_[e], q, tau); });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query simplex.
     std::vector<int> collisions( const Simplex& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) intersecting the query simplex.
     std::vector<int> collisions( const Simplex& q, double tau ) const
     {
         check_query_tau(tau);
@@ -534,7 +584,9 @@ public:
             });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query segment.
     std::vector<int> collisions( const Segment& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) intersecting the query segment.
     std::vector<int> collisions( const Segment& q, double tau ) const
     {
         check_query_tau(tau);
@@ -546,7 +598,9 @@ public:
             });
     }
 
+    /// Indices of the ellipsoids (at the build tau) intersecting the query halfspace.
     std::vector<int> collisions( const Halfspace& q ) const { return collisions(q, tau_); }
+    /// Indices of the ellipsoids at scale tau (at most the build tau) intersecting the query halfspace.
     std::vector<int> collisions( const Halfspace& q, double tau ) const
     {
         check_query_tau(tau);
@@ -554,6 +608,7 @@ public:
             [&]( int e ) { return intersects(objects_[e], q, tau); });
     }
 
+    /// Every intersecting pair within the family of ellipsoids at the build tau (the overlap graph).
     std::vector<std::pair<int, int>> self_collision_pairs() const
     {
         return detail::collect_self_pairs(aabb_,
@@ -606,8 +661,10 @@ class SimplexTree : public detail::TreeBatchQueries<SimplexTree>
 public:
     bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
+    /// Empty tree (indexes no simplices).
     SimplexTree() = default;
 
+    /// Index a collection of simplices, precomputing each affine-coordinate transform and building the tree over their bounding boxes.
     explicit SimplexTree( std::vector<Simplex> simplices, int num_threads = 0 )
         : objects_(std::move(simplices))
     {
@@ -666,10 +723,15 @@ public:
     {
     }
 
+    /// Number of indexed simplices.
     int size() const { return static_cast<int>(objects_.size()); }
+    /// Spatial dimension of the indexed simplices.
     int dim() const  { return aabb_.dim(); }
+    /// The ii-th indexed simplex.
     const Simplex& object( int ii ) const          { return objects_[ii]; }
+    /// All indexed simplices, in index order.
     const std::vector<Simplex>& objects() const    { return objects_; }
+    /// The underlying AABB tree over the elements' bounding boxes.
     const AABBTree& tree() const                   { return aabb_; }
 
     /// Affine (barycentric) coordinates of p with respect to element ii.
@@ -678,6 +740,7 @@ public:
         return transform_A_[ii] * p + transform_b_[ii];
     }
 
+    /// Indices of the simplices containing the query point.
     std::vector<int> collisions( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         return detail::tree_collisions(aabb_, detail::point_node_pred(p),
@@ -701,21 +764,25 @@ public:
         return found;
     }
 
+    /// Indices of the simplices intersecting the query box.
     std::vector<int> collisions( const Box& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(q),
             [&]( int e ) { return intersects(q, objects_[e]); });
     }
+    /// Indices of the simplices intersecting the query simplex.
     std::vector<int> collisions( const Simplex& q ) const
     {
         return detail::tree_collisions(aabb_, detail::box_node_pred(bounding_box(q)),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
+    /// Indices of the simplices intersecting the query ball.
     std::vector<int> collisions( const Ball& q ) const
     {
         return detail::tree_collisions(aabb_, detail::ball_node_pred(q),
             [&]( int e ) { return intersects(q, objects_[e]); });
     }
+    /// Indices of the simplices intersecting the query ellipsoid at scale tau.
     std::vector<int> collisions( const Ellipsoid& q, double tau ) const
     {
         const double t2 = tau * tau;
@@ -727,6 +794,7 @@ public:
                 return closest_point_in_simplex(q.mu, objects_[e].V, Minv).distance_squared <= t2;
             });
     }
+    /// Indices of the simplices intersecting the query segment.
     std::vector<int> collisions( const Segment& q ) const
     {
         return detail::tree_collisions(aabb_, detail::segment_node_pred(q),
@@ -741,12 +809,14 @@ public:
                 return intersects(q, objects_[e]);
             });
     }
+    /// Indices of the simplices intersecting the query halfspace.
     std::vector<int> collisions( const Halfspace& q ) const
     {
         return detail::tree_collisions(aabb_, detail::halfspace_node_pred(q),
             [&]( int e ) { return intersects(objects_[e], q); });
     }
 
+    /// Every intersecting pair within the family of simplices (the overlap graph).
     std::vector<std::pair<int, int>> self_collision_pairs() const
     {
         return detail::collect_self_pairs(aabb_,
@@ -787,6 +857,7 @@ inline std::vector<std::pair<int, int>> collision_pairs( const EllipsoidTree& A,
     });
 }
 
+/// Every intersecting simplex-ellipsoid pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, const EllipsoidTree& B )
 {
     const double t2 = B.tau() * B.tau();
@@ -797,12 +868,14 @@ inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, c
     });
 }
 
+/// Every intersecting ball-ellipsoid pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BallTree& A, const EllipsoidTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj), B.tau()); });
 }
 
+/// Every intersecting box-ellipsoid pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BoxTree& A, const EllipsoidTree& B )
 {
     const double t2 = B.tau() * B.tau();
@@ -815,36 +888,42 @@ inline std::vector<std::pair<int, int>> collision_pairs( const BoxTree& A, const
     });
 }
 
+/// Every intersecting box-box pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BoxTree& A, const BoxTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj)); });
 }
 
+/// Every intersecting ball-ball pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BallTree& A, const BallTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj)); });
 }
 
+/// Every intersecting box-ball pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BoxTree& A, const BallTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj)); });
 }
 
+/// Every intersecting ball-simplex pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BallTree& A, const SimplexTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj)); });
 }
 
+/// Every intersecting simplex-simplex pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, const SimplexTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
     { return intersects(A.object(ii), B.object(jj)); });
 }
 
+/// Every intersecting box-simplex pair between the two families, found in one simultaneous descent of both trees.
 inline std::vector<std::pair<int, int>> collision_pairs( const BoxTree& A, const SimplexTree& B )
 {
     return detail::collect_pairs(A.tree(), B.tree(), [&]( int ii, int jj )
@@ -864,16 +943,22 @@ inline std::vector<std::pair<int, int>> flip_pairs( std::vector<std::pair<int, i
 
 } // end namespace detail
 
+/// Every intersecting pair between the ellipsoids and the simplices (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const EllipsoidTree& A, const SimplexTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
+/// Every intersecting pair between the ellipsoids and the balls (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const EllipsoidTree& A, const BallTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
+/// Every intersecting pair between the ellipsoids and the boxes (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const EllipsoidTree& A, const BoxTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
+/// Every intersecting pair between the balls and the boxes (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const BallTree& A, const BoxTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
+/// Every intersecting pair between the simplices and the balls (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, const BallTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
+/// Every intersecting pair between the simplices and the boxes (arguments reversed).
 inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, const BoxTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
 

@@ -32,13 +32,16 @@ class KDTree
 public:
     int block_size = 32; ///< Leaf ranges of at most this many points are scanned linearly.
 
+    /// Constructs an empty tree; call build() before querying.
     KDTree() = default;
 
+    /// Builds an index over the columns of a (dim, n) matrix (one point per column).
     explicit KDTree( const Eigen::Ref<const Eigen::MatrixXd>& points )
     {
         build(points);
     }
 
+    /// (Re)builds the median-split layout over the columns of a (dim, n) matrix, snapshotting block_size for this layout.
     void build( const Eigen::Ref<const Eigen::MatrixXd>& input_points )
     {
         dim_     = static_cast<int>(input_points.rows());
@@ -58,7 +61,9 @@ public:
         }
     }
 
+    /// Number of indexed points.
     int size() const { return num_pts_; }
+    /// Spatial dimension of the indexed points.
     int dim() const  { return dim_; }
 
     /// Structure inspection (e.g. for visualization): points permuted into

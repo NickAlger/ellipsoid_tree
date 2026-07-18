@@ -37,6 +37,7 @@ namespace etree {
 class SimplexMesh
 {
 public:
+    /// Builds a d-simplex mesh from vertex coordinates (dim, num_vertices) and cell vertex-index columns (dim+1, num_cells); the boundary is extracted as the faces belonging to exactly one cell.
     SimplexMesh( const Eigen::Ref<const Eigen::MatrixXd>& vertices, // (dim, num_vertices)
                  const Eigen::Ref<const Eigen::MatrixXi>& cells,    // (dim+1, num_cells)
                  int num_threads = 0 )
@@ -116,15 +117,24 @@ public:
         boundary_kdtree_.build(boundary_vertices);
     }
 
+    /// Spatial dimension d.
     int dim() const                { return dim_; }
+    /// Number of mesh vertices.
     int num_vertices() const       { return static_cast<int>(vertices_.cols()); }
+    /// Number of cells (d-simplices).
     int num_cells() const          { return static_cast<int>(cells_.cols()); }
+    /// Number of boundary faces (faces belonging to exactly one cell).
     int num_boundary_faces() const { return static_cast<int>(faces_.cols()); }
 
+    /// Vertex coordinates, shape (dim, num_vertices).
     const Eigen::MatrixXd& vertices() const       { return vertices_; }
+    /// Cell vertex indices, shape (dim+1, num_cells).
     const Eigen::MatrixXi& cells() const          { return cells_; }
+    /// Boundary-face vertex indices, shape (dim, num_boundary_faces).
     const Eigen::MatrixXi& boundary_faces() const { return faces_; }
+    /// Underlying spatial index over the cells.
     const SimplexTree& cell_tree() const          { return cell_tree_; }
+    /// Underlying spatial index over the boundary faces.
     const SimplexTree& boundary_face_tree() const { return face_tree_; }
 
     // ------------------------------------------------------------------
@@ -157,6 +167,7 @@ public:
         return std::make_pair(std::move(cell_inds), std::move(coords));
     }
 
+    /// For each query point (column), true if it lies inside the meshed domain (some cell contains it).
     Eigen::Array<bool, Eigen::Dynamic, 1>
     point_is_in_mesh( const Eigen::Ref<const Eigen::MatrixXd>& points, int num_threads = 0 ) const
     {
@@ -167,6 +178,7 @@ public:
     //  Closest point on/in the mesh
     // ------------------------------------------------------------------
 
+    /// Closest point of the meshed domain to p: p itself if p is inside the mesh, otherwise the closest point on the mesh boundary.
     Eigen::VectorXd closest_point( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         if ( cell_tree_.first_collision(p) >= 0 )
@@ -201,6 +213,7 @@ public:
         return best_point;
     }
 
+    /// Closest domain point to each query point (column), shape (dim, num_points); see closest_point.
     Eigen::MatrixXd closest_points( const Eigen::Ref<const Eigen::MatrixXd>& points,
                                     int num_threads = 0 ) const
     {
@@ -269,6 +282,7 @@ public:
     //  Ellipsoid queries against the cells
     // ------------------------------------------------------------------
 
+    /// Indices of the cells intersecting the ellipsoid E at scale tau.
     std::vector<int> cells_intersecting( const Ellipsoid& E, double tau ) const
     {
         return cell_tree_.collisions(E, tau);

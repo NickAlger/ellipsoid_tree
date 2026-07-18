@@ -321,38 +321,45 @@ inline bool segment_affine_feasible( const Eigen::Ref<const Eigen::VectorXd>& al
 //  Closed-form cells
 // ------------------------------------------------------------------
 
+/// Whether point p lies in box B (componentwise coordinate-bounds test).
 inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Box& B )
 {
     return (B.lo.array() <= p.array()).all() && (p.array() <= B.hi.array()).all();
 }
 
+/// Whether point p lies in ball B (distance to center vs radius).
 inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Ball& B )
 {
     return (p - B.center).squaredNorm() <= B.radius * B.radius;
 }
 
+/// Whether point p lies in ellipsoid E(tau) (Mahalanobis test via an LDLT solve).
 inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Ellipsoid& E, double tau )
 {
     Eigen::VectorXd z = p - E.mu;
     return E.Sigma.ldlt().solve(z).dot(z) <= tau * tau;
 }
 
+/// Whether point p lies in halfspace H (closed-form normal . p <= offset).
 inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Halfspace& H )
 {
     return H.normal.dot(p) <= H.offset;
 }
 
+/// Whether boxes A and B overlap (per-axis interval overlap).
 inline bool intersects( const Box& A, const Box& B )
 {
     return (A.lo.array() <= B.hi.array()).all() && (B.lo.array() <= A.hi.array()).all();
 }
 
+/// Whether box A and ball B overlap (distance from the center to its clamped closest point in the box vs radius).
 inline bool intersects( const Box& A, const Ball& B )
 {
     Eigen::VectorXd closest = B.center.cwiseMax(A.lo).cwiseMin(A.hi);
     return (closest - B.center).squaredNorm() <= B.radius * B.radius;
 }
 
+/// Whether box A meets halfspace H (support function: min of normal . x over the box vs offset).
 inline bool intersects( const Box& A, const Halfspace& H )
 {
     double support = 0.0; // min over the box of normal . x
@@ -363,17 +370,20 @@ inline bool intersects( const Box& A, const Halfspace& H )
     return support <= H.offset;
 }
 
+/// Whether balls A and B overlap (center distance vs the sum of radii).
 inline bool intersects( const Ball& A, const Ball& B )
 {
     const double r = A.radius + B.radius;
     return (A.center - B.center).squaredNorm() <= r * r;
 }
 
+/// Whether ball A meets halfspace H (closed-form support-function comparison against the offset).
 inline bool intersects( const Ball& A, const Halfspace& H )
 {
     return H.normal.dot(A.center) - A.radius * H.normal.norm() <= H.offset;
 }
 
+/// Whether ellipsoid E(tau) meets halfspace H (support test: normal . mu - tau*sqrt(normal^T Sigma normal) vs offset).
 inline bool intersects( const Ellipsoid& E, const Halfspace& H, double tau )
 {
     // min over E(tau) of normal . x = normal . mu - tau * sqrt(normal^T Sigma normal)
@@ -381,11 +391,13 @@ inline bool intersects( const Ellipsoid& E, const Halfspace& H, double tau )
     return H.normal.dot(E.mu) - tau * spread <= H.offset;
 }
 
+/// Whether simplex S meets halfspace H (support function: min of normal . x over the vertices vs offset).
 inline bool intersects( const Simplex& S, const Halfspace& H )
 {
     return (H.normal.transpose() * S.V).minCoeff() <= H.offset;
 }
 
+/// Whether segment S meets box B (slab method along the segment's parameter).
 inline bool intersects( const Segment& S, const Box& B )
 {
     // Slab method on x(t) = a + t (b - a), t in [0, 1].
@@ -420,6 +432,7 @@ inline bool intersects( const Segment& S, const Box& B )
     return true;
 }
 
+/// Whether segment S meets ball B (distance from its closest point to the center vs radius).
 inline bool intersects( const Segment& S, const Ball& B )
 {
     const Eigen::VectorXd u  = S.b - S.a;
@@ -432,6 +445,7 @@ inline bool intersects( const Segment& S, const Ball& B )
     return (S.a + t * u - B.center).squaredNorm() <= B.radius * B.radius;
 }
 
+/// Whether segment S meets ellipsoid E(tau) (closed-form 1D minimization of the Mahalanobis quadratic over the segment).
 inline bool intersects( const Segment& S, const Ellipsoid& E, double tau )
 {
     // q(t) = (a + t u - mu)^T Sigma^{-1} (a + t u - mu) is a convex quadratic;
@@ -482,11 +496,13 @@ inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Simple
     return closest_point_in_simplex(p, S.V).distance_squared <= tol * tol;
 }
 
+/// Whether ball B and simplex S overlap (Euclidean distance from the center to the simplex, via face enumeration, vs radius).
 inline bool intersects( const Ball& B, const Simplex& S )
 {
     return closest_point_in_simplex(B.center, S.V).distance_squared <= B.radius * B.radius;
 }
 
+/// Whether segment seg meets simplex S (coordinate-interval feasibility for a full-dimensional simplex, else a tolerance-based 1D distance minimization).
 inline bool intersects( const Segment& seg, const Simplex& S )
 {
     const int dim = S.V.rows();
@@ -616,6 +632,7 @@ inline bool intersects( const Ellipsoid& A, const Ellipsoid& B, double tau )
     return detail::minimize_scalar(K, 0.0, 1.0, opts).f >= 0.0;
 }
 
+/// Whether ball B and ellipsoid E(tau) overlap: treats the ball as an ellipsoid (Sigma = (radius/tau)^2 I) and applies the Gilitschenski-Hanebeck test.
 inline bool intersects( const Ball& B, const Ellipsoid& E, double tau )
 {
     if ( B.radius <= 0.0 )
@@ -629,6 +646,7 @@ inline bool intersects( const Ball& B, const Ellipsoid& E, double tau )
     return intersects(E, ball_as_ellipsoid, tau);
 }
 
+/// Whether box A and ellipsoid E(tau) overlap (closest point to mu in the box under the Sigma^{-1} metric, by projected coordinate descent, vs tau^2).
 inline bool intersects( const Box& A, const Ellipsoid& E, double tau )
 {
     if ( !intersects(A, bounding_box(E, tau)) )
@@ -641,6 +659,7 @@ inline bool intersects( const Box& A, const Ellipsoid& E, double tau )
            <= tau * tau;
 }
 
+/// Whether ellipsoid E(tau) and simplex S overlap (closest point to mu in the simplex under the Sigma^{-1} metric, by face enumeration, vs tau^2).
 inline bool intersects( const Ellipsoid& E, const Simplex& S, double tau )
 {
     if ( !intersects(bounding_box(S), bounding_box(E, tau)) )
@@ -656,28 +675,47 @@ inline bool intersects( const Ellipsoid& E, const Simplex& S, double tau )
 //  Reversed argument orders
 // ------------------------------------------------------------------
 
+/// Overlap test between box and point (arguments reversed).
 inline bool intersects( const Box&  B, const Eigen::Ref<const Eigen::VectorXd>& p ) { return intersects(p, B); }
+/// Overlap test between ball and point (arguments reversed).
 inline bool intersects( const Ball& B, const Eigen::Ref<const Eigen::VectorXd>& p ) { return intersects(p, B); }
+/// Overlap test between ellipsoid E(tau) and point (arguments reversed).
 inline bool intersects( const Ellipsoid& E, const Eigen::Ref<const Eigen::VectorXd>& p, double tau ) { return intersects(p, E, tau); }
+/// Overlap test between simplex and point (arguments reversed).
 inline bool intersects( const Simplex& S, const Eigen::Ref<const Eigen::VectorXd>& p ) { return intersects(p, S); }
+/// Overlap test between halfspace and point (arguments reversed).
 inline bool intersects( const Halfspace& H, const Eigen::Ref<const Eigen::VectorXd>& p ) { return intersects(p, H); }
 
+/// Overlap test between ball and box (arguments reversed).
 inline bool intersects( const Ball& B, const Box& A )                    { return intersects(A, B); }
+/// Overlap test between ellipsoid E(tau) and box (arguments reversed).
 inline bool intersects( const Ellipsoid& E, const Box& A, double tau )   { return intersects(A, E, tau); }
+/// Overlap test between halfspace and box (arguments reversed).
 inline bool intersects( const Halfspace& H, const Box& A )               { return intersects(A, H); }
+/// Overlap test between box and segment (arguments reversed).
 inline bool intersects( const Box& A, const Segment& S )                 { return intersects(S, A); }
 
+/// Overlap test between ellipsoid E(tau) and ball (arguments reversed).
 inline bool intersects( const Ellipsoid& E, const Ball& B, double tau )  { return intersects(B, E, tau); }
+/// Overlap test between simplex and ball (arguments reversed).
 inline bool intersects( const Simplex& S, const Ball& B )                { return intersects(B, S); }
+/// Overlap test between halfspace and ball (arguments reversed).
 inline bool intersects( const Halfspace& H, const Ball& B )              { return intersects(B, H); }
+/// Overlap test between ball and segment (arguments reversed).
 inline bool intersects( const Ball& B, const Segment& S )                { return intersects(S, B); }
 
+/// Overlap test between simplex and ellipsoid E(tau) (arguments reversed).
 inline bool intersects( const Simplex& S, const Ellipsoid& E, double tau )  { return intersects(E, S, tau); }
+/// Overlap test between halfspace and ellipsoid E(tau) (arguments reversed).
 inline bool intersects( const Halfspace& H, const Ellipsoid& E, double tau ) { return intersects(E, H, tau); }
+/// Overlap test between ellipsoid E(tau) and segment (arguments reversed).
 inline bool intersects( const Ellipsoid& E, const Segment& S, double tau )  { return intersects(S, E, tau); }
 
+/// Overlap test between halfspace and simplex (arguments reversed).
 inline bool intersects( const Halfspace& H, const Simplex& S )           { return intersects(S, H); }
+/// Overlap test between simplex and segment (arguments reversed).
 inline bool intersects( const Simplex& S, const Segment& seg )           { return intersects(seg, S); }
+/// Overlap test between simplex and box (arguments reversed).
 inline bool intersects( const Simplex& S, const Box& A )                 { return intersects(A, S); }
 
 } // end namespace etree
