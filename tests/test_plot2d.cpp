@@ -54,12 +54,11 @@ TEST_CASE("Plot2D emits well-formed SVG with the expected elements")
     CHECK(count_occurrences(svg, "</svg>") == 1);
     CHECK(count_occurrences(svg, "<ellipse") == 2);  // ellipsoid + ball
     CHECK(count_occurrences(svg, "<polygon") == 1);  // triangle
-    CHECK(count_occurrences(svg, "<polyline") == 1); // segment
+    CHECK(count_occurrences(svg, "<polyline") >= 5); // segment + axis tick lines
     CHECK(count_occurrences(svg, "<circle") == 1);   // marker
     CHECK(count_occurrences(svg, "clipPath") >= 1);
-    // axes on by default: frame rect + background + box primitive + ticks
     CHECK(count_occurrences(svg, "<text") >= 4);     // tick labels
-    CHECK(count_occurrences(svg, "<line") >= 5);     // halfspace boundary + ticks
+    CHECK(count_occurrences(svg, "<line") == 1);     // halfspace boundary
 }
 
 TEST_CASE("Plot2D geometry survives the world-to-canvas transform")

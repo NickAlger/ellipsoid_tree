@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <fstream>
 #include <functional>
+#include <limits>
 #include <stdexcept>
 #include <string>
 #include <utility>
@@ -34,6 +35,8 @@
 #include "etree/geometry.hpp"
 #include "etree/object_tree.hpp"
 #include "etree/kd_tree.hpp"
+#include "etree/simplex_mesh.hpp"
+#include "etree/detail/raster2d.hpp"
 
 namespace etree {
 
@@ -80,6 +83,24 @@ struct Style
     Color  stroke       = colors::black();
     double stroke_width = 1.3;                  // in canvas pixels
     Color  fill         = colors::transparent();
+};
+
+enum class TextAnchor { start, middle, end };
+
+// The viridis colormap, t in [0, 1].
+inline Color colormap_viridis( double t )
+{
+    Color c;
+    detail::viridis_rgb(t, c.r, c.g, c.b);
+    c.a = 1.0;
+    return c;
+}
+
+struct RenderedImage
+{
+    int width  = 0;
+    int height = 0;
+    std::vector<unsigned char> rgb; // row-major, 3 bytes per pixel
 };
 
 
@@ -209,7 +230,8 @@ public:
     }
 
     void add_text( const Eigen::Ref<const Eigen::Vector2d>& pt, std::string text,
-                   double size_px = 12.0, Color color = colors::black() )
+                   double size_px = 12.0, Color color = colors::black(),
+                   TextAnchor anchor = TextAnchor::start )
     {
         Primitive p;
         p.kind      = Primitive::Kind::text;
@@ -217,7 +239,55 @@ public:
         p.center    = pt;
         p.text      = std::move(text);
         p.radius_px = size_px;
+        p.anchor    = anchor;
         include_point(pt);
+        prims_.push_back(std::move(p));
+    }
+
+    // Triangle carrying normalized scalar values t in [0, 1] at its vertices:
+    // the PNG backend interpolates the VALUE barycentrically per pixel and
+    // applies the viridis colormap there, so the colormap curve is followed
+    // exactly even on coarse meshes (unlike Gouraud color interpolation).
+    // SVG falls back to a flat fill at the mean value.
+    void add_cg1_triangle( const Eigen::Ref<const Eigen::MatrixXd>& pts,
+                           double t0, double t1, double t2 )
+    {
+        require_dim2(static_cast<int>(pts.rows()), "triangle");
+        Primitive p;
+        p.kind   = Primitive::Kind::tri_field;
+        p.points = pts.leftCols(3);
+        p.value_colormap = true;
+        p.vvalue[0] = t0;
+        p.vvalue[1] = t1;
+        p.vvalue[2] = t2;
+        const Color avg = colormap_viridis((t0 + t1 + t2) / 3.0);
+        p.style = Style{avg, 0.8, avg}; // stroke in the same color covers seams
+        for ( int ii = 0; ii < 3; ++ii )
+        {
+            include_point(pts.col(ii));
+        }
+        prims_.push_back(std::move(p));
+    }
+
+    // Triangle with per-vertex colors: barycentric color interpolation in the
+    // PNG backend (Gouraud); flat average-color fill in SVG. pts has shape (2, 3).
+    void add_filled_triangle( const Eigen::Ref<const Eigen::MatrixXd>& pts,
+                              const Color& c0, const Color& c1, const Color& c2 )
+    {
+        require_dim2(static_cast<int>(pts.rows()), "triangle");
+        Primitive p;
+        p.kind   = Primitive::Kind::tri_field;
+        p.points = pts.leftCols(3);
+        p.vcolor[0] = c0;
+        p.vcolor[1] = c1;
+        p.vcolor[2] = c2;
+        Color avg{(c0.r + c1.r + c2.r) / 3.0, (c0.g + c1.g + c2.g) / 3.0,
+                  (c0.b + c1.b + c2.b) / 3.0, 1.0};
+        p.style = Style{avg, 0.8, avg}; // stroke in the same color covers seams
+        for ( int ii = 0; ii < 3; ++ii )
+        {
+            include_point(pts.col(ii));
+        }
         prims_.push_back(std::move(p));
     }
 
@@ -263,16 +333,52 @@ public:
         svg += "</g>\n";
         if ( axes_on_ )
         {
-            emit_axes(svg, fr);
+            for ( const Primitive& p : axes_primitives(fr) )
+            {
+                emit_svg(svg, p, fr);
+            }
         }
         svg += "</svg>\n";
         return svg;
     }
 
+    // Rasterize the figure (white background, 1px antialiasing).
+    RenderedImage render_rgb( int width_px = 900 ) const
+    {
+        const Frame fr = make_frame(width_px);
+        detail::Raster img;
+        img.init(static_cast<int>(std::lround(fr.width)), static_cast<int>(std::lround(fr.height)));
+        for ( const Primitive& p : prims_ )
+        {
+            rasterize(img, p, fr, /*clip=*/true);
+        }
+        if ( axes_on_ )
+        {
+            for ( const Primitive& p : axes_primitives(fr) )
+            {
+                rasterize(img, p, fr, /*clip=*/false);
+            }
+        }
+        RenderedImage out;
+        out.width  = img.w;
+        out.height = img.h;
+        out.rgb    = std::move(img.rgb);
+        return out;
+    }
+
+    void save_png( const std::string& path, int width_px = 900 ) const
+    {
+        const RenderedImage im = render_rgb(width_px);
+        if ( !stbi_write_png(path.c_str(), im.width, im.height, 3, im.rgb.data(), 3 * im.width) )
+        {
+            throw std::runtime_error("etree::Plot2D::save_png: cannot write " + path);
+        }
+    }
+
 private:
     struct Primitive
     {
-        enum class Kind { ellipse, rect, polyline, polygon, marker, text, halfspace };
+        enum class Kind { ellipse, rect, polyline, polygon, marker, text, halfspace, tri_field };
         Kind            kind;
         Style           style;
         Eigen::Vector2d center;       // ellipse/marker/text center; halfspace normal
@@ -282,8 +388,13 @@ private:
         double          radius_px = 0; // marker radius / text size (canvas px)
         double          offset    = 0; // halfspace offset
         Eigen::Vector2d lo, hi;       // rect
-        Eigen::MatrixXd points;       // polyline/polygon, shape (2, n)
+        Eigen::MatrixXd points;       // polyline/polygon/tri_field, shape (2, n)
         std::string     text;
+        TextAnchor      anchor = TextAnchor::start;
+        bool            canvas_coords = false; // axes internals live in pixel space
+        Color           vcolor[3];    // tri_field per-vertex colors (Gouraud)
+        double          vvalue[3] = {0, 0, 0}; // tri_field per-vertex scalars in [0, 1]
+        bool            value_colormap = false; // interpolate the value, then colormap
     };
 
     struct Frame
@@ -404,25 +515,89 @@ private:
         return s;
     }
 
+    // Boundary line of a halfspace primitive clipped to the plot bounds;
+    // false if it misses the plot area entirely.
+    static bool halfspace_boundary( const Primitive& p, const Frame& fr,
+                                    Eigen::Vector2d& out_a, Eigen::Vector2d& out_b )
+    {
+        const Eigen::Vector2d n = p.center;
+        std::vector<Eigen::Vector2d> hits;
+        auto try_edge = [&]( const Eigen::Vector2d& a, const Eigen::Vector2d& b )
+        {
+            const double fa = n.dot(a) - p.offset;
+            const double fb = n.dot(b) - p.offset;
+            if ( (fa <= 0.0 && fb >= 0.0) || (fa >= 0.0 && fb <= 0.0) )
+            {
+                const double denom = fa - fb;
+                if ( std::abs(denom) > 1e-300 )
+                {
+                    hits.push_back(a + (fa / denom) * (b - a));
+                }
+            }
+        };
+        const Eigen::Vector2d c00(fr.xlo, fr.ylo), c10(fr.xhi, fr.ylo);
+        const Eigen::Vector2d c11(fr.xhi, fr.yhi), c01(fr.xlo, fr.yhi);
+        try_edge(c00, c10); try_edge(c10, c11); try_edge(c11, c01); try_edge(c01, c00);
+        if ( hits.size() < 2 )
+        {
+            return false;
+        }
+        size_t ia = 0, ib = 1;
+        double best = -1.0;
+        for ( size_t aa = 0; aa < hits.size(); ++aa )
+        {
+            for ( size_t bb = aa + 1; bb < hits.size(); ++bb )
+            {
+                const double d2 = (hits[aa] - hits[bb]).squaredNorm();
+                if ( d2 > best )
+                {
+                    best = d2;
+                    ia = aa;
+                    ib = bb;
+                }
+            }
+        }
+        out_a = hits[ia];
+        out_b = hits[ib];
+        return true;
+    }
+
     void emit_svg( std::string& svg, const Primitive& p, const Frame& fr ) const
     {
+        // Canvas-space primitives (axes internals) pass through untransformed
+        auto CX = [&]( double x ) { return p.canvas_coords ? x : fr.X(x); };
+        auto CY = [&]( double y ) { return p.canvas_coords ? y : fr.Y(y); };
+        const double sc = p.canvas_coords ? 1.0 : fr.s;
         switch ( p.kind )
         {
         case Primitive::Kind::ellipse:
         {
             const double deg = -p.angle * 180.0 / 3.14159265358979323846; // y-flip negates angles
-            svg += "<ellipse cx=\"0\" cy=\"0\" rx=\"" + fmt(fr.s * p.radius_a)
-                 + "\" ry=\"" + fmt(fr.s * p.radius_b)
-                 + "\" transform=\"translate(" + fmt(fr.X(p.center(0))) + " " + fmt(fr.Y(p.center(1)))
+            svg += "<ellipse cx=\"0\" cy=\"0\" rx=\"" + fmt(sc * p.radius_a)
+                 + "\" ry=\"" + fmt(sc * p.radius_b)
+                 + "\" transform=\"translate(" + fmt(CX(p.center(0))) + " " + fmt(CY(p.center(1)))
                  + ") rotate(" + fmt(deg) + ")\"" + style_attrs(p.style) + "/>\n";
             break;
         }
         case Primitive::Kind::rect:
         {
-            svg += "<rect x=\"" + fmt(fr.X(p.lo(0))) + "\" y=\"" + fmt(fr.Y(p.hi(1)))
-                 + "\" width=\"" + fmt(fr.s * (p.hi(0) - p.lo(0)))
-                 + "\" height=\"" + fmt(fr.s * (p.hi(1) - p.lo(1))) + "\""
-                 + style_attrs(p.style) + "/>\n";
+            double x, y, w, h;
+            if ( p.canvas_coords )
+            {
+                x = p.lo(0);
+                y = p.lo(1);
+                w = p.hi(0) - p.lo(0);
+                h = p.hi(1) - p.lo(1);
+            }
+            else
+            {
+                x = fr.X(p.lo(0));
+                y = fr.Y(p.hi(1));
+                w = fr.s * (p.hi(0) - p.lo(0));
+                h = fr.s * (p.hi(1) - p.lo(1));
+            }
+            svg += "<rect x=\"" + fmt(x) + "\" y=\"" + fmt(y) + "\" width=\"" + fmt(w)
+                 + "\" height=\"" + fmt(h) + "\"" + style_attrs(p.style) + "/>\n";
             break;
         }
         case Primitive::Kind::polyline:
@@ -432,66 +607,45 @@ private:
             for ( int ii = 0; ii < p.points.cols(); ++ii )
             {
                 if ( ii > 0 ) { svg += " "; }
-                svg += fmt(fr.X(p.points(0, ii))) + "," + fmt(fr.Y(p.points(1, ii)));
+                svg += fmt(CX(p.points(0, ii))) + "," + fmt(CY(p.points(1, ii)));
             }
             svg += "\"" + style_attrs(p.style) + "/>\n";
             break;
         }
+        case Primitive::Kind::tri_field:
+        {
+            svg += "<polygon points=\"";
+            for ( int ii = 0; ii < 3; ++ii )
+            {
+                if ( ii > 0 ) { svg += " "; }
+                svg += fmt(CX(p.points(0, ii))) + "," + fmt(CY(p.points(1, ii)));
+            }
+            svg += "\"" + style_attrs(p.style) + "/>\n"; // flat average-color fill
+            break;
+        }
         case Primitive::Kind::marker:
         {
-            svg += "<circle cx=\"" + fmt(fr.X(p.center(0))) + "\" cy=\"" + fmt(fr.Y(p.center(1)))
+            svg += "<circle cx=\"" + fmt(CX(p.center(0))) + "\" cy=\"" + fmt(CY(p.center(1)))
                  + "\" r=\"" + fmt(p.radius_px) + "\"" + style_attrs(p.style) + "/>\n";
             break;
         }
         case Primitive::Kind::text:
         {
-            svg += "<text x=\"" + fmt(fr.X(p.center(0))) + "\" y=\"" + fmt(fr.Y(p.center(1)))
+            std::string anchor_attr;
+            if ( p.anchor == TextAnchor::middle ) { anchor_attr = " text-anchor=\"middle\""; }
+            if ( p.anchor == TextAnchor::end )    { anchor_attr = " text-anchor=\"end\""; }
+            svg += "<text x=\"" + fmt(CX(p.center(0))) + "\" y=\"" + fmt(CY(p.center(1)))
                  + "\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"" + fmt(p.radius_px)
-                 + "\" fill=\"" + rgb(p.style.fill) + "\">" + p.text + "</text>\n";
+                 + "\" fill=\"" + rgb(p.style.fill) + "\"" + anchor_attr + ">" + p.text + "</text>\n";
             break;
         }
         case Primitive::Kind::halfspace:
         {
-            // Clip the boundary line normal.x = offset to the plot bounds
-            const Eigen::Vector2d n = p.center;
-            std::vector<Eigen::Vector2d> hits;
-            auto try_edge = [&]( const Eigen::Vector2d& a, const Eigen::Vector2d& b )
+            Eigen::Vector2d a, b;
+            if ( halfspace_boundary(p, fr, a, b) )
             {
-                const double fa = n.dot(a) - p.offset;
-                const double fb = n.dot(b) - p.offset;
-                if ( (fa <= 0.0 && fb >= 0.0) || (fa >= 0.0 && fb <= 0.0) )
-                {
-                    const double denom = fa - fb;
-                    if ( std::abs(denom) > 1e-300 )
-                    {
-                        const double t = fa / denom;
-                        hits.push_back(a + t * (b - a));
-                    }
-                }
-            };
-            const Eigen::Vector2d c00(fr.xlo, fr.ylo), c10(fr.xhi, fr.ylo);
-            const Eigen::Vector2d c11(fr.xhi, fr.yhi), c01(fr.xlo, fr.yhi);
-            try_edge(c00, c10); try_edge(c10, c11); try_edge(c11, c01); try_edge(c01, c00);
-            if ( hits.size() >= 2 )
-            {
-                // Farthest pair among collected intersection points
-                int ia = 0, ib = 1;
-                double best = -1.0;
-                for ( size_t aa = 0; aa < hits.size(); ++aa )
-                {
-                    for ( size_t bb = aa + 1; bb < hits.size(); ++bb )
-                    {
-                        const double d2 = (hits[aa] - hits[bb]).squaredNorm();
-                        if ( d2 > best )
-                        {
-                            best = d2;
-                            ia = static_cast<int>(aa);
-                            ib = static_cast<int>(bb);
-                        }
-                    }
-                }
-                svg += "<line x1=\"" + fmt(fr.X(hits[ia](0))) + "\" y1=\"" + fmt(fr.Y(hits[ia](1)))
-                     + "\" x2=\"" + fmt(fr.X(hits[ib](0))) + "\" y2=\"" + fmt(fr.Y(hits[ib](1)))
+                svg += "<line x1=\"" + fmt(fr.X(a(0))) + "\" y1=\"" + fmt(fr.Y(a(1)))
+                     + "\" x2=\"" + fmt(fr.X(b(0))) + "\" y2=\"" + fmt(fr.Y(b(1)))
                      + "\"" + style_attrs(p.style) + "/>\n";
             }
             break;
@@ -521,31 +675,318 @@ private:
         return std::string(buf);
     }
 
-    void emit_axes( std::string& svg, const Frame& fr ) const
+    // Axes as canvas-space primitives, shared by the SVG and PNG backends.
+    std::vector<Primitive> axes_primitives( const Frame& fr ) const
     {
-        const std::string axis_color = "rgb(60,60,60)";
-        svg += "<rect x=\"" + fmt(fr.ml) + "\" y=\"" + fmt(fr.mt) + "\" width=\"" + fmt(fr.plot_w)
-             + "\" height=\"" + fmt(fr.plot_h) + "\" fill=\"none\" stroke=\"" + axis_color
-             + "\" stroke-width=\"1\"/>\n";
+        const Color axis_col{60.0 / 255.0, 60.0 / 255.0, 60.0 / 255.0, 1.0};
+        const Style line_style{axis_col, 1.0, colors::transparent()};
+
+        std::vector<Primitive> out;
+
+        Primitive frame;
+        frame.kind          = Primitive::Kind::rect;
+        frame.canvas_coords = true;
+        frame.style         = line_style;
+        frame.lo            = Eigen::Vector2d(fr.ml, fr.mt);
+        frame.hi            = Eigen::Vector2d(fr.ml + fr.plot_w, fr.mt + fr.plot_h);
+        out.push_back(std::move(frame));
+
+        auto add_line = [&]( double x1, double y1, double x2, double y2 )
+        {
+            Primitive tick;
+            tick.kind          = Primitive::Kind::polyline;
+            tick.canvas_coords = true;
+            tick.style         = line_style;
+            tick.points.resize(2, 2);
+            tick.points << x1, x2, y1, y2;
+            out.push_back(std::move(tick));
+        };
+        auto add_label = [&]( double x, double y, const std::string& label, TextAnchor anchor )
+        {
+            Primitive txt;
+            txt.kind          = Primitive::Kind::text;
+            txt.canvas_coords = true;
+            txt.style         = Style{axis_col, 0.0, axis_col};
+            txt.center        = Eigen::Vector2d(x, y);
+            txt.text          = label;
+            txt.radius_px     = 11.0;
+            txt.anchor        = anchor;
+            out.push_back(std::move(txt));
+        };
 
         const double y0 = fr.mt + fr.plot_h;
         for ( double t : nice_ticks(fr.xlo, fr.xhi) )
         {
-            const double x = fr.X(t);
-            svg += "<line x1=\"" + fmt(x) + "\" y1=\"" + fmt(y0) + "\" x2=\"" + fmt(x)
-                 + "\" y2=\"" + fmt(y0 + 4.0) + "\" stroke=\"" + axis_color + "\" stroke-width=\"1\"/>\n";
-            svg += "<text x=\"" + fmt(x) + "\" y=\"" + fmt(y0 + 17.0)
-                 + "\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" fill=\"" + axis_color
-                 + "\" text-anchor=\"middle\">" + tick_label(t) + "</text>\n";
+            add_line(fr.X(t), y0, fr.X(t), y0 + 4.0);
+            add_label(fr.X(t), y0 + 17.0, tick_label(t), TextAnchor::middle);
         }
         for ( double t : nice_ticks(fr.ylo, fr.yhi) )
         {
-            const double y = fr.Y(t);
-            svg += "<line x1=\"" + fmt(fr.ml - 4.0) + "\" y1=\"" + fmt(y) + "\" x2=\"" + fmt(fr.ml)
-                 + "\" y2=\"" + fmt(y) + "\" stroke=\"" + axis_color + "\" stroke-width=\"1\"/>\n";
-            svg += "<text x=\"" + fmt(fr.ml - 8.0) + "\" y=\"" + fmt(y + 4.0)
-                 + "\" font-family=\"Helvetica,Arial,sans-serif\" font-size=\"11\" fill=\"" + axis_color
-                 + "\" text-anchor=\"end\">" + tick_label(t) + "</text>\n";
+            add_line(fr.ml - 4.0, fr.Y(t), fr.ml, fr.Y(t));
+            add_label(fr.ml - 8.0, fr.Y(t) + 4.0, tick_label(t), TextAnchor::end);
+        }
+        return out;
+    }
+
+    // Software-rasterize one primitive (SDF coverage, 1px antialiasing).
+    void rasterize( detail::Raster& img, const Primitive& p, const Frame& fr, bool clip ) const
+    {
+        const double clx0 = clip ? fr.ml : 0.0;
+        const double cly0 = clip ? fr.mt : 0.0;
+        const double clx1 = clip ? fr.ml + fr.plot_w : static_cast<double>(img.w);
+        const double cly1 = clip ? fr.mt + fr.plot_h : static_cast<double>(img.h);
+
+        auto CX = [&]( double x ) { return p.canvas_coords ? x : fr.X(x); };
+        auto CY = [&]( double y ) { return p.canvas_coords ? y : fr.Y(y); };
+        const double sc = p.canvas_coords ? 1.0 : fr.s;
+
+        const Style& st = p.style;
+        const bool has_fill   = st.fill.a > 0.0;
+        const bool has_stroke = st.stroke.a > 0.0 && st.stroke_width > 0.0;
+
+        // Paint every pixel of a bounding region with fill/stroke coverage
+        // computed from a signed distance callback.
+        auto paint_sdf = [&]( double x0, double x1, double y0, double y1, auto&& sdf )
+        {
+            const int ix0 = std::max(0, static_cast<int>(std::floor(std::max(x0, clx0))));
+            const int ix1 = std::min(img.w - 1, static_cast<int>(std::ceil(std::min(x1, clx1))));
+            const int iy0 = std::max(0, static_cast<int>(std::floor(std::max(y0, cly0))));
+            const int iy1 = std::min(img.h - 1, static_cast<int>(std::ceil(std::min(y1, cly1))));
+            for ( int iy = iy0; iy <= iy1; ++iy )
+            {
+                for ( int ix = ix0; ix <= ix1; ++ix )
+                {
+                    const double px = ix + 0.5;
+                    const double py = iy + 0.5;
+                    if ( px < clx0 || px > clx1 || py < cly0 || py > cly1 )
+                    {
+                        continue;
+                    }
+                    const double d = sdf(px, py);
+                    if ( has_fill )
+                    {
+                        img.blend(ix, iy, st.fill.r, st.fill.g, st.fill.b,
+                                  st.fill.a * detail::fill_coverage(d));
+                    }
+                    if ( has_stroke )
+                    {
+                        img.blend(ix, iy, st.stroke.r, st.stroke.g, st.stroke.b,
+                                  st.stroke.a * detail::stroke_coverage(d, st.stroke_width));
+                    }
+                }
+            }
+        };
+
+        const double pad = 0.5 * st.stroke_width + 1.5;
+
+        switch ( p.kind )
+        {
+        case Primitive::Kind::ellipse:
+        {
+            const double cx = CX(p.center(0));
+            const double cy = CY(p.center(1));
+            const double rx = sc * p.radius_a;
+            const double ry = sc * p.radius_b;
+            const double ang = -p.angle; // canvas rotation (y-flip)
+            const double ca = std::cos(ang);
+            const double sa = std::sin(ang);
+            const double R  = std::max(rx, ry) + pad;
+            paint_sdf(cx - R, cx + R, cy - R, cy + R, [&]( double px, double py )
+            {
+                const double dx = px - cx;
+                const double dy = py - cy;
+                return detail::sd_ellipse(ca * dx + sa * dy, -sa * dx + ca * dy, rx, ry);
+            });
+            break;
+        }
+        case Primitive::Kind::rect:
+        {
+            double x0, y0, x1, y1;
+            if ( p.canvas_coords )
+            {
+                x0 = p.lo(0); y0 = p.lo(1); x1 = p.hi(0); y1 = p.hi(1);
+            }
+            else
+            {
+                x0 = fr.X(p.lo(0)); y0 = fr.Y(p.hi(1));
+                x1 = fr.X(p.hi(0)); y1 = fr.Y(p.lo(1));
+            }
+            const double cx = 0.5 * (x0 + x1);
+            const double cy = 0.5 * (y0 + y1);
+            const double hx = 0.5 * (x1 - x0);
+            const double hy = 0.5 * (y1 - y0);
+            paint_sdf(x0 - pad, x1 + pad, y0 - pad, y1 + pad, [&]( double px, double py )
+            {
+                return detail::sd_box(px, py, cx, cy, hx, hy);
+            });
+            break;
+        }
+        case Primitive::Kind::polyline:
+        case Primitive::Kind::polygon:
+        {
+            const int n = static_cast<int>(p.points.cols());
+            std::vector<double> pts(2 * n);
+            double x0 = 1e300, x1 = -1e300, y0 = 1e300, y1 = -1e300;
+            for ( int ii = 0; ii < n; ++ii )
+            {
+                pts[2 * ii]     = CX(p.points(0, ii));
+                pts[2 * ii + 1] = CY(p.points(1, ii));
+                x0 = std::min(x0, pts[2 * ii]);     x1 = std::max(x1, pts[2 * ii]);
+                y0 = std::min(y0, pts[2 * ii + 1]); y1 = std::max(y1, pts[2 * ii + 1]);
+            }
+            if ( p.kind == Primitive::Kind::polygon )
+            {
+                paint_sdf(x0 - pad, x1 + pad, y0 - pad, y1 + pad, [&]( double px, double py )
+                {
+                    return detail::sd_polygon(px, py, pts);
+                });
+            }
+            else
+            {
+                paint_sdf(x0 - pad, x1 + pad, y0 - pad, y1 + pad, [&]( double px, double py )
+                {
+                    double d = 1e300;
+                    for ( int ii = 0; ii + 1 < n; ++ii )
+                    {
+                        d = std::min(d, detail::sd_segment(px, py, pts[2 * ii], pts[2 * ii + 1],
+                                                           pts[2 * ii + 2], pts[2 * ii + 3]));
+                    }
+                    return d;
+                });
+            }
+            break;
+        }
+        case Primitive::Kind::tri_field:
+        {
+            std::vector<double> pts(6);
+            double x0 = 1e300, x1 = -1e300, y0 = 1e300, y1 = -1e300;
+            for ( int ii = 0; ii < 3; ++ii )
+            {
+                pts[2 * ii]     = CX(p.points(0, ii));
+                pts[2 * ii + 1] = CY(p.points(1, ii));
+                x0 = std::min(x0, pts[2 * ii]);     x1 = std::max(x1, pts[2 * ii]);
+                y0 = std::min(y0, pts[2 * ii + 1]); y1 = std::max(y1, pts[2 * ii + 1]);
+            }
+            // Barycentric coordinates for color interpolation
+            const double ux = pts[2] - pts[0], uy = pts[3] - pts[1];
+            const double vx = pts[4] - pts[0], vy = pts[5] - pts[1];
+            const double det = ux * vy - uy * vx;
+            if ( std::abs(det) < 1e-14 )
+            {
+                break; // degenerate triangle
+            }
+            const int ix0 = std::max(0, static_cast<int>(std::floor(std::max(x0 - 1.0, clx0))));
+            const int ix1 = std::min(img.w - 1, static_cast<int>(std::ceil(std::min(x1 + 1.0, clx1))));
+            const int iy0 = std::max(0, static_cast<int>(std::floor(std::max(y0 - 1.0, cly0))));
+            const int iy1 = std::min(img.h - 1, static_cast<int>(std::ceil(std::min(y1 + 1.0, cly1))));
+            for ( int iy = iy0; iy <= iy1; ++iy )
+            {
+                for ( int ix = ix0; ix <= ix1; ++ix )
+                {
+                    const double px = ix + 0.5;
+                    const double py = iy + 0.5;
+                    if ( px < clx0 || px > clx1 || py < cly0 || py > cly1 )
+                    {
+                        continue;
+                    }
+                    // Half-pixel dilation hides seams between adjacent triangles
+                    const double cov = detail::fill_coverage(detail::sd_polygon(px, py, pts) - 0.5);
+                    if ( cov <= 0.0 )
+                    {
+                        continue;
+                    }
+                    double l1 = ((px - pts[0]) * vy - (py - pts[1]) * vx) / det;
+                    double l2 = (-(px - pts[0]) * uy + (py - pts[1]) * ux) / det;
+                    l1 = std::min(1.0, std::max(0.0, l1));
+                    l2 = std::min(1.0, std::max(0.0, l2));
+                    const double l0 = std::max(0.0, 1.0 - l1 - l2);
+                    const double norm = l0 + l1 + l2;
+                    double r, g, b;
+                    if ( p.value_colormap )
+                    {
+                        const double t = (l0 * p.vvalue[0] + l1 * p.vvalue[1] + l2 * p.vvalue[2]) / norm;
+                        detail::viridis_rgb(t, r, g, b);
+                    }
+                    else
+                    {
+                        r = (l0 * p.vcolor[0].r + l1 * p.vcolor[1].r + l2 * p.vcolor[2].r) / norm;
+                        g = (l0 * p.vcolor[0].g + l1 * p.vcolor[1].g + l2 * p.vcolor[2].g) / norm;
+                        b = (l0 * p.vcolor[0].b + l1 * p.vcolor[1].b + l2 * p.vcolor[2].b) / norm;
+                    }
+                    img.blend(ix, iy, r, g, b, cov);
+                }
+            }
+            break;
+        }
+        case Primitive::Kind::marker:
+        {
+            const double cx = CX(p.center(0));
+            const double cy = CY(p.center(1));
+            const double R  = p.radius_px + pad;
+            paint_sdf(cx - R, cx + R, cy - R, cy + R, [&]( double px, double py )
+            {
+                const double dx = px - cx;
+                const double dy = py - cy;
+                return std::sqrt(dx * dx + dy * dy) - p.radius_px;
+            });
+            break;
+        }
+        case Primitive::Kind::text:
+        {
+            const double scale = p.radius_px / 7.0;
+            const double adv   = 6.0 * scale;
+            const int    len   = static_cast<int>(p.text.size());
+            const double wtot  = (len > 0) ? len * adv - scale : 0.0;
+            double x_left = CX(p.center(0));
+            if ( p.anchor == TextAnchor::middle ) { x_left -= 0.5 * wtot; }
+            if ( p.anchor == TextAnchor::end )    { x_left -= wtot; }
+            const double y_top = CY(p.center(1)) - 7.0 * scale;
+
+            const int ix0 = std::max(0, static_cast<int>(std::floor(x_left)));
+            const int ix1 = std::min(img.w - 1, static_cast<int>(std::ceil(x_left + wtot)));
+            const int iy0 = std::max(0, static_cast<int>(std::floor(y_top)));
+            const int iy1 = std::min(img.h - 1, static_cast<int>(std::ceil(y_top + 7.0 * scale)));
+            for ( int iy = iy0; iy <= iy1; ++iy )
+            {
+                for ( int ix = ix0; ix <= ix1; ++ix )
+                {
+                    const double u = (ix + 0.5 - x_left) / adv;
+                    const int    gi = static_cast<int>(std::floor(u));
+                    if ( gi < 0 || gi >= len )
+                    {
+                        continue;
+                    }
+                    const int col = static_cast<int>(std::floor((u - gi) * 6.0));
+                    const int row = static_cast<int>(std::floor((iy + 0.5 - y_top) / scale));
+                    if ( col < 0 || col > 4 || row < 0 || row > 6 )
+                    {
+                        continue;
+                    }
+                    const unsigned char* glyph = detail::glyph5x7(p.text[gi]);
+                    if ( glyph[row] & (0x10 >> col) )
+                    {
+                        img.blend(ix, iy, st.fill.r, st.fill.g, st.fill.b, st.fill.a);
+                    }
+                }
+            }
+            break;
+        }
+        case Primitive::Kind::halfspace:
+        {
+            Eigen::Vector2d a, b;
+            if ( halfspace_boundary(p, fr, a, b) )
+            {
+                const double ax = fr.X(a(0)), ay = fr.Y(a(1));
+                const double bx = fr.X(b(0)), by = fr.Y(b(1));
+                paint_sdf(std::min(ax, bx) - pad, std::max(ax, bx) + pad,
+                          std::min(ay, by) - pad, std::max(ay, by) + pad,
+                          [&]( double px, double py )
+                {
+                    return detail::sd_segment(px, py, ax, ay, bx, by);
+                });
+            }
+            break;
+        }
         }
     }
 
@@ -762,6 +1203,59 @@ inline void draw_kdtree( Plot2D& fig, const KDTree& T, DrawKDTreeOptions opts = 
         for ( int ii = 0; ii < T.size(); ++ii )
         {
             fig.add_marker(pts.col(ii), opts.marker_radius_px, opts.point_style);
+        }
+    }
+}
+
+
+// ------------------------------------------------------------------
+//  CG1 (piecewise linear) scalar field rendering
+// ------------------------------------------------------------------
+
+struct FieldOptions
+{
+    double vmin = std::numeric_limits<double>::quiet_NaN(); // NaN: use the data minimum
+    double vmax = std::numeric_limits<double>::quiet_NaN(); // NaN: use the data maximum
+    bool   wireframe  = false;
+    Style  wire_style = Style{with_alpha(colors::black(), 0.35), 0.5, colors::transparent()};
+};
+
+// Render a CG1 nodal field on a 2D SimplexMesh through the viridis colormap.
+// The PNG backend interpolates colors barycentrically per pixel (a
+// dependency-free tripcolor); the SVG backend uses flat per-triangle fill.
+inline void draw_cg1_field( Plot2D& fig, const SimplexMesh& mesh,
+                            const Eigen::Ref<const Eigen::VectorXd>& vertex_values,
+                            FieldOptions opts = FieldOptions() )
+{
+    if ( mesh.dim() != 2 )
+    {
+        throw std::invalid_argument("etree::draw_cg1_field: mesh must be 2D");
+    }
+    if ( vertex_values.size() != mesh.num_vertices() )
+    {
+        throw std::invalid_argument("etree::draw_cg1_field: one value per vertex required");
+    }
+    double vmin = std::isnan(opts.vmin) ? vertex_values.minCoeff() : opts.vmin;
+    double vmax = std::isnan(opts.vmax) ? vertex_values.maxCoeff() : opts.vmax;
+    if ( !(vmax > vmin) )
+    {
+        vmax = vmin + 1.0;
+    }
+
+    for ( int cc = 0; cc < mesh.num_cells(); ++cc )
+    {
+        Eigen::MatrixXd V(2, 3);
+        double          t[3];
+        for ( int kk = 0; kk < 3; ++kk )
+        {
+            const int vidx = mesh.cells()(kk, cc);
+            V.col(kk) = mesh.vertices().col(vidx);
+            t[kk]     = (vertex_values(vidx) - vmin) / (vmax - vmin);
+        }
+        fig.add_cg1_triangle(V, t[0], t[1], t[2]);
+        if ( opts.wireframe )
+        {
+            fig.add_polyline(V, opts.wire_style, /*closed=*/true);
         }
     }
 }
