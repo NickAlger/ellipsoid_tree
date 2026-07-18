@@ -7,9 +7,18 @@
 /// etree: ellipsoid intersection tests and spatial trees. Header-only C++17;
 /// depends only on Eigen. https://github.com/NickAlger/ellipsoid_tree
 
+// Single source of truth for the version. CMakeLists.txt parses these macros to
+// set the project version, and a CI check keeps pyproject.toml / CITATION.cff in
+// sync; ETREE_VERSION is the composed "MAJOR.MINOR.PATCH" string.
 #define ETREE_VERSION_MAJOR 0
 #define ETREE_VERSION_MINOR 1
 #define ETREE_VERSION_PATCH 0
+#define ETREE_STRINGIZE_IMPL(x) #x
+#define ETREE_STRINGIZE(x)      ETREE_STRINGIZE_IMPL(x)
+#define ETREE_VERSION                        \
+    ETREE_STRINGIZE(ETREE_VERSION_MAJOR) "." \
+    ETREE_STRINGIZE(ETREE_VERSION_MINOR) "." \
+    ETREE_STRINGIZE(ETREE_VERSION_PATCH)
 
 // Umbrella header. Public headers are included here as they land:
 #include "etree/geometry.hpp"       // Box, Ball, Ellipsoid, Simplex (+ Segment, Halfspace)

@@ -78,3 +78,23 @@ jobs:
         run: cmake --build build -j 2
       - name: Test
         run: ctest --test-dir build --output-on-failure
+
+  version-consistency:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: etree.hpp version matches pyproject.toml and CITATION.cff
+        run: |
+          python3 - <<'PY'
+          import re, sys, tomllib
+          hpp = open("include/etree/etree.hpp").read()
+          def macro(tag): return re.search(rf"ETREE_VERSION_{tag} (\d+)", hpp).group(1)
+          header = f"{macro('MAJOR')}.{macro('MINOR')}.{macro('PATCH')}"
+          pyproj = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
+          cff = re.search(r'(?m)^version:\s*"?([0-9][0-9.]*)"?', open("CITATION.cff").read()).group(1)
+          print(f"etree.hpp={header}  pyproject.toml={pyproj}  CITATION.cff={cff}")
+          bad = {f: v for f, v in {"pyproject.toml": pyproj, "CITATION.cff": cff}.items() if v != header}
+          if bad:
+              sys.exit(f"version mismatch vs etree.hpp ({header}): {bad}")
+          print("versions consistent")
+          PY

@@ -1,6 +1,15 @@
 # SPDX-License-Identifier: MIT
 cmake_minimum_required(VERSION 3.16)
-project(etree VERSION 0.1.0 LANGUAGES CXX)
+
+# Version is single-sourced from the public header (see include/etree/etree.hpp).
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/etree/etree.hpp" _etree_hpp)
+string(REGEX MATCH "ETREE_VERSION_MAJOR ([0-9]+)" _ "${_etree_hpp}")
+set(_etree_major "${CMAKE_MATCH_1}")
+string(REGEX MATCH "ETREE_VERSION_MINOR ([0-9]+)" _ "${_etree_hpp}")
+set(_etree_minor "${CMAKE_MATCH_1}")
+string(REGEX MATCH "ETREE_VERSION_PATCH ([0-9]+)" _ "${_etree_hpp}")
+set(_etree_patch "${CMAKE_MATCH_1}")
+project(etree VERSION ${_etree_major}.${_etree_minor}.${_etree_patch} LANGUAGES CXX)
 
 add_library(etree INTERFACE)
 add_library(etree::etree ALIAS etree)

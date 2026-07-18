@@ -5,6 +5,12 @@ Points, boxes, balls, ellipsoids, and simplices in R^d; single pairs,
 tree-accelerated queries, and tree-vs-tree sweeps. Header-only C++17 with
 Python bindings; Eigen is the only dependency.
 
+[![CI](https://github.com/NickAlger/ellipsoid_tree/actions/workflows/ci.yml/badge.svg)](https://github.com/NickAlger/ellipsoid_tree/actions/workflows/ci.yml)
+[![Docs](https://img.shields.io/badge/docs-API%20reference-blue)](https://nickalger.github.io/ellipsoid_tree/)
+[![PyPI](https://img.shields.io/pypi/v/ellipsoid-etree)](https://pypi.org/project/ellipsoid-etree/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ellipsoid-etree)](https://pypi.org/project/ellipsoid-etree/)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 <p align="center">
 <img src="docs/img/batch_picking__batches.svg" width="640">
 </p>
@@ -148,11 +154,18 @@ Header-only: add `include/` to your include path. To run the tests and
 examples:
 
 ```sh
-cmake -S . -B build && cmake --build build -j && ctest --test-dir build
+cmake -S . -B build && cmake --build build -j $(nproc) && ctest --test-dir build
 python3 docs/generate_examples.py   # regenerate the example documentation
 ```
 
 ## References and acknowledgements
+
+etree grew out of the point-spread-function probing developed in N. Alger,
+T. Hartland, N. Petra, and O. Ghattas, *Point spread function approximation of
+high-rank Hessians with locally supported nonnegative integral kernels*, SIAM
+Journal on Scientific Computing 46(3), 2024, A1658–A1689 — the origin of the
+non-overlapping ellipsoid batch-picking problem. The algorithms and tools it
+builds on:
 
 - I. Gilitschenski and U. D. Hanebeck, *A Direct Method for Checking Overlap
   of Two Hyperellipsoids*, Sensor Data Fusion: Trends, Solutions,
