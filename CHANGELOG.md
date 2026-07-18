@@ -24,6 +24,6 @@ Initial public release.
   figures render inline in Jupyter.
 - Doxygen API reference published to GitHub Pages.
 - CMake install/export (`find_package(etree)`) and a pip package
-  (`ellipsoid-etree`; import name `etree`).
+  (`ellipsoid-tree`; import name `etree`).
 
 [0.1.0]: https://github.com/NickAlger/ellipsoid_tree/releases/tag/v0.1.0

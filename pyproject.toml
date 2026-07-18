@@ -4,9 +4,8 @@ requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
 build-backend = "scikit_build_core.build"
 
 [project]
-# Distribution (PyPI) name. The import name stays `etree`; `ellipsoid-etree`
-# avoids collision/confusion with the generic `etree` on PyPI.
-name = "ellipsoid-etree"
+# Distribution (PyPI) name — matches the repo. The import name stays `etree`.
+name = "ellipsoid-tree"
 version = "0.1.0"
 description = "Exact ellipsoid intersection tests and spatial trees (header-only C++ core with Python bindings)"
 readme = "README.md"
