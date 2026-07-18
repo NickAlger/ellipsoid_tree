@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="320" height="230.8874976" viewBox="0 0 320 230.8874976">
+<rect x="0" y="0" width="320" height="230.8874976" fill="white"/>
+<clipPath id="plotclip"><rect x="58" y="14" width="248" height="174.8874976"/></clipPath>
+<g clip-path="url(#plotclip)">
+<ellipse cx="0" cy="0" rx="105.4107672" ry="42.16430688" transform="translate(162.9638137 116.8191222) rotate(-30.00007015)" stroke="rgb(0,114,178)" stroke-width="1.8" fill="rgb(0,114,178)" fill-opacity="0.25"/>
+<ellipse cx="0" cy="0" rx="36.89376852" ry="36.89376852" transform="translate(257.8335042 58.84320023) rotate(-0)" stroke="rgb(213,94,0)" stroke-width="1.8" fill="rgb(213,94,0)" fill-opacity="0.25"/>
+</g>
+<rect x="58" y="14" width="248" height="174.8874976" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<polyline points="110.2584301,188.8874976 110.2584301,192.8874976" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="110.2584301" y="205.8874976" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="middle">-0.5</text>
+<polyline points="162.9638137,188.8874976 162.9638137,192.8874976" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="162.9638137" y="205.8874976" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="middle">0</text>
+<polyline points="215.6691973,188.8874976 215.6691973,192.8874976" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="215.6691973" y="205.8874976" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="middle">0.5</text>
+<polyline points="268.3745809,188.8874976 268.3745809,192.8874976" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="268.3745809" y="205.8874976" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="middle">1</text>
+<polyline points="54,180.0655825 58,180.0655825" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="184.0655825" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">-0.6</text>
+<polyline points="54,158.9834291 58,158.9834291" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="162.9834291" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">-0.4</text>
+<polyline points="54,137.9012756 58,137.9012756" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="141.9012756" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">-0.2</text>
+<polyline points="54,116.8191222 58,116.8191222" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="120.8191222" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">0</text>
+<polyline points="54,95.73696875 58,95.73696875" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="99.73696875" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">0.2</text>
+<polyline points="54,74.65481531 58,74.65481531" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="78.65481531" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">0.4</text>
+<polyline points="54,53.57266187 58,53.57266187" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="57.57266187" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">0.6</text>
+<polyline points="54,32.49050843 58,32.49050843" stroke="rgb(60,60,60)" stroke-width="1" fill="none"/>
+<text x="50" y="36.49050843" font-family="Helvetica,Arial,sans-serif" font-size="11" fill="rgb(60,60,60)" text-anchor="end">0.8</text>
+</svg>

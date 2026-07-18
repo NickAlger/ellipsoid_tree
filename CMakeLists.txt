@@ -42,11 +42,17 @@ target_link_libraries(etree INTERFACE Eigen3::Eigen)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
     option(ETREE_BUILD_TESTS "Build etree tests" ON)
+    option(ETREE_BUILD_EXAMPLES "Build etree examples" ON)
 else()
     option(ETREE_BUILD_TESTS "Build etree tests" OFF)
+    option(ETREE_BUILD_EXAMPLES "Build etree examples" OFF)
 endif()
 
 if(ETREE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
+endif()
+
+if(ETREE_BUILD_EXAMPLES)
+    add_subdirectory(examples)
 endif()

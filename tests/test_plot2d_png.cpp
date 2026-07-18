@@ -154,6 +154,29 @@ TEST_CASE("CG1 field rendering matches viridis at probe points")
     CHECK_THROWS_AS(draw_cg1_field(fig2, mesh, bad), std::invalid_argument);
 }
 
+TEST_CASE("halfspace fill shades the feasible side in both backends")
+{
+    Plot2D fig;
+    fig.axes(false);
+    fig.set_bounds(Box{Eigen::Vector2d(-1, -1), Eigen::Vector2d(1, 1)});
+    // {x : x <= 0.1}, feasible side shaded pure red
+    fig.add(Halfspace{Eigen::Vector2d(1.0, 0.0), 0.1},
+            Style{colors::black(), 2.0, Color{1, 0, 0, 1}});
+
+    // SVG gains a fill polygon in addition to the boundary line
+    const std::string svg = fig.to_svg(400);
+    CHECK(svg.find("<polygon") != std::string::npos);
+    CHECK(svg.find("<line") != std::string::npos);
+
+    RenderedImage im = fig.render_rgb(400);
+    const double s = 376.0 / 2.0;
+    const int x_feasible   = static_cast<int>(10 + s * (-0.5 + 1.0)); // world x = -0.5
+    const int x_infeasible = static_cast<int>(10 + s * (0.7 + 1.0));  // world x = +0.7
+    const int y_mid        = static_cast<int>(14 + s * (1.0 - 0.0));  // world y = 0
+    CHECK(near_color(px(im, x_feasible, y_mid), 255, 0, 0, 0));
+    CHECK(near_color(px(im, x_infeasible, y_mid), 255, 255, 255, 0));
+}
+
 TEST_CASE("save_png writes a valid PNG file")
 {
     Plot2D fig;

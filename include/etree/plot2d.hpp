@@ -562,6 +562,45 @@ private:
         return true;
     }
 
+    // Feasible-side polygon of a halfspace clipped to the plot bounds (world
+    // coordinates, ordered around the centroid); empty if nothing is visible.
+    static std::vector<Eigen::Vector2d> halfspace_region( const Primitive& p, const Frame& fr )
+    {
+        std::vector<Eigen::Vector2d> pts;
+        const Eigen::Vector2d n = p.center;
+        const Eigen::Vector2d corners[4] = {{fr.xlo, fr.ylo}, {fr.xhi, fr.ylo},
+                                            {fr.xhi, fr.yhi}, {fr.xlo, fr.yhi}};
+        for ( const Eigen::Vector2d& c : corners )
+        {
+            if ( n.dot(c) <= p.offset )
+            {
+                pts.push_back(c);
+            }
+        }
+        Eigen::Vector2d a, b;
+        if ( halfspace_boundary(p, fr, a, b) )
+        {
+            pts.push_back(a);
+            pts.push_back(b);
+        }
+        if ( pts.size() < 3 )
+        {
+            return {};
+        }
+        Eigen::Vector2d centroid(0, 0);
+        for ( const Eigen::Vector2d& q : pts )
+        {
+            centroid += q;
+        }
+        centroid /= static_cast<double>(pts.size());
+        std::sort(pts.begin(), pts.end(), [&]( const Eigen::Vector2d& u, const Eigen::Vector2d& v )
+        {
+            return std::atan2(u(1) - centroid(1), u(0) - centroid(0))
+                 < std::atan2(v(1) - centroid(1), v(0) - centroid(0));
+        });
+        return pts;
+    }
+
     void emit_svg( std::string& svg, const Primitive& p, const Frame& fr ) const
     {
         // Canvas-space primitives (axes internals) pass through untransformed
@@ -641,12 +680,27 @@ private:
         }
         case Primitive::Kind::halfspace:
         {
+            if ( p.style.fill.a > 0.0 ) // shade the feasible side
+            {
+                std::vector<Eigen::Vector2d> region = halfspace_region(p, fr);
+                if ( region.size() >= 3 )
+                {
+                    svg += "<polygon points=\"";
+                    for ( size_t ii = 0; ii < region.size(); ++ii )
+                    {
+                        if ( ii > 0 ) { svg += " "; }
+                        svg += fmt(fr.X(region[ii](0))) + "," + fmt(fr.Y(region[ii](1)));
+                    }
+                    svg += "\"" + style_attrs(Style{colors::transparent(), 0.0, p.style.fill}) + "/>\n";
+                }
+            }
             Eigen::Vector2d a, b;
             if ( halfspace_boundary(p, fr, a, b) )
             {
                 svg += "<line x1=\"" + fmt(fr.X(a(0))) + "\" y1=\"" + fmt(fr.Y(a(1)))
                      + "\" x2=\"" + fmt(fr.X(b(0))) + "\" y2=\"" + fmt(fr.Y(b(1)))
-                     + "\"" + style_attrs(p.style) + "/>\n";
+                     + "\"" + style_attrs(Style{p.style.stroke, p.style.stroke_width,
+                                                colors::transparent()}) + "/>\n";
             }
             break;
         }
@@ -973,17 +1027,64 @@ private:
         }
         case Primitive::Kind::halfspace:
         {
+            if ( has_fill ) // shade the feasible side
+            {
+                std::vector<Eigen::Vector2d> region = halfspace_region(p, fr);
+                if ( region.size() >= 3 )
+                {
+                    std::vector<double> pts(2 * region.size());
+                    double x0 = 1e300, x1 = -1e300, y0 = 1e300, y1 = -1e300;
+                    for ( size_t ii = 0; ii < region.size(); ++ii )
+                    {
+                        pts[2 * ii]     = fr.X(region[ii](0));
+                        pts[2 * ii + 1] = fr.Y(region[ii](1));
+                        x0 = std::min(x0, pts[2 * ii]);     x1 = std::max(x1, pts[2 * ii]);
+                        y0 = std::min(y0, pts[2 * ii + 1]); y1 = std::max(y1, pts[2 * ii + 1]);
+                    }
+                    const int jx0 = std::max(0, static_cast<int>(std::floor(std::max(x0 - 1.0, clx0))));
+                    const int jx1 = std::min(img.w - 1, static_cast<int>(std::ceil(std::min(x1 + 1.0, clx1))));
+                    const int jy0 = std::max(0, static_cast<int>(std::floor(std::max(y0 - 1.0, cly0))));
+                    const int jy1 = std::min(img.h - 1, static_cast<int>(std::ceil(std::min(y1 + 1.0, cly1))));
+                    for ( int iy = jy0; iy <= jy1; ++iy )
+                    {
+                        for ( int ix = jx0; ix <= jx1; ++ix )
+                        {
+                            const double px = ix + 0.5;
+                            const double py = iy + 0.5;
+                            if ( px < clx0 || px > clx1 || py < cly0 || py > cly1 )
+                            {
+                                continue;
+                            }
+                            img.blend(ix, iy, st.fill.r, st.fill.g, st.fill.b,
+                                      st.fill.a * detail::fill_coverage(detail::sd_polygon(px, py, pts)));
+                        }
+                    }
+                }
+            }
             Eigen::Vector2d a, b;
-            if ( halfspace_boundary(p, fr, a, b) )
+            if ( has_stroke && halfspace_boundary(p, fr, a, b) )
             {
                 const double ax = fr.X(a(0)), ay = fr.Y(a(1));
                 const double bx = fr.X(b(0)), by = fr.Y(b(1));
-                paint_sdf(std::min(ax, bx) - pad, std::max(ax, bx) + pad,
-                          std::min(ay, by) - pad, std::max(ay, by) + pad,
-                          [&]( double px, double py )
+                const int jx0 = std::max(0, static_cast<int>(std::floor(std::max(std::min(ax, bx) - pad, clx0))));
+                const int jx1 = std::min(img.w - 1, static_cast<int>(std::ceil(std::min(std::max(ax, bx) + pad, clx1))));
+                const int jy0 = std::max(0, static_cast<int>(std::floor(std::max(std::min(ay, by) - pad, cly0))));
+                const int jy1 = std::min(img.h - 1, static_cast<int>(std::ceil(std::min(std::max(ay, by) + pad, cly1))));
+                for ( int iy = jy0; iy <= jy1; ++iy )
                 {
-                    return detail::sd_segment(px, py, ax, ay, bx, by);
-                });
+                    for ( int ix = jx0; ix <= jx1; ++ix )
+                    {
+                        const double px = ix + 0.5;
+                        const double py = iy + 0.5;
+                        if ( px < clx0 || px > clx1 || py < cly0 || py > cly1 )
+                        {
+                            continue;
+                        }
+                        img.blend(ix, iy, st.stroke.r, st.stroke.g, st.stroke.b,
+                                  st.stroke.a * detail::stroke_coverage(
+                                      detail::sd_segment(px, py, ax, ay, bx, by), st.stroke_width));
+                    }
+                }
             }
             break;
         }
