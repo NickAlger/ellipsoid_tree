@@ -1,26 +1,25 @@
 # etree
 
-**Exact intersection tests for ellipsoids and friends — in any dimension.**
+**Exact intersection tests for ellipsoids and friends.**
 Points, boxes, balls, ellipsoids, and simplices in R^d; single pairs,
 tree-accelerated queries, and tree-vs-tree sweeps. Header-only C++17 with
-Python bindings; Eigen is the only dependency (no CGAL, no Boost).
+Python bindings; Eigen is the only dependency.
 
 <p align="center">
 <img src="docs/img/batch_picking__batches.svg" width="640">
 </p>
 
 *A family of anisotropic ellipsoids partitioned into batches of mutually
-non-overlapping members ([example](docs/examples/batch_picking.md)) — the
-geometric kernel of point-spread-function probing. The figures throughout
-are 2D only because the built-in visualization is 2D; the library itself is
-dimension-generic, and the test suite exercises d = 1 through 6.*
+non-overlapping members ([example](docs/examples/batch_picking.md)). The figures throughout
+are 2D because the built-in visualization is 2D; the library itself is
+dimension-generic.*
 
 ## The design in one idea
 
 etree is organized around a small closed system:
 
 **Objects.** Five geometric types — `point`, `Box`, `Ball`, `Ellipsoid`,
-`Simplex` — all convex, all dimension-generic. A `Simplex` may be
+`Simplex`. A `Simplex` may be
 lower-dimensional (a point, segment, or triangle embedded in R^d). Two more
 types participate as queries only: `Segment` and `Halfspace`.
 
@@ -39,8 +38,8 @@ pairwise tests:
 | tree × tree | `collision_pairs(T1, T2)` | every intersecting pair between two families, in one simultaneous descent of both trees |
 
 The diagonal of the third level is self-collision
-(`tree.self_collision_pairs()`), which yields the overlap graph of a family —
-the input to [batch picking](docs/examples/batch_picking.md); tree × tree
+(`tree.self_collision_pairs()`), which yields the overlap graph of a family:
+the input to [batch picking](docs/examples/batch_picking.md). Tree × tree
 over two meshes' cell trees is [mesh × mesh collision](docs/examples/mesh_mesh.md),
 the kernel of supermeshing.
 
@@ -79,7 +78,7 @@ exact ellipsoid-box QP on survivors), so acceleration never changes answers.
   `geometric_sort`, greedy non-overlapping
   [ellipsoid batch picking](docs/examples/batch_picking.md).
 - **Optional zero-dependency 2D visualization** (`etree/plot2d.hpp`):
-  SVG and PNG figures of objects, trees, queries, and CG1 fields — every
+  SVG and PNG figures of objects, trees, queries, and CG1 fields. Every
   figure in the documentation is drawn with it.
 
 ## Quick start
@@ -118,9 +117,8 @@ build the module without pip via
 ## Examples ("show, don't tell")
 
 Every page in [`docs/examples/`](docs/README.md) is a complete program, its
-actual output, and the figures it draws — regenerated from the code by
-`docs/generate_examples.py` and checked in CI, so the documentation cannot
-drift from the library:
+actual output, and the figures it draws, which are regenerated from the code by
+`docs/generate_examples.py` and checked in CI:
 
 - [Pairwise intersection tests, visually](docs/examples/intersections_gallery.md)
 - [Which points of a cloud does an ellipsoid cover?](docs/examples/point_cloud.md)
