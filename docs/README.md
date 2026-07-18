@@ -10,3 +10,7 @@ Each page shows a complete program, its actual output, and the figures it draws 
 - [Mesh vs mesh: all intersecting cell pairs between two meshes](examples/mesh_mesh.md)
 - [SimplexMesh: point location, closest points, and mesh-vs-ellipsoid](examples/mesh_queries.md)
 - [Which points of a cloud does an ellipsoid cover?](examples/point_cloud.md)
+
+## Python
+
+- [Non-overlapping ellipsoid batches (Jupyter notebook)](../examples/python_batch_picking.ipynb) — the batch-picking example via the Python bindings; re-executed in CI (outputs not diffed) and rendered inline by GitHub.

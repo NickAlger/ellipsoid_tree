@@ -113,6 +113,7 @@ builds the `etree` module via scikit-build-core; points are rows (`(n, d)`
 arrays, scipy-style), and figures render inline in Jupyter. Alternatively,
 build the module without pip via
 `cmake -B build -DETREE_BUILD_PYTHON=ON && cmake --build build --target etree_python`.
+For a worked walkthrough, see the [Python quickstart notebook](examples/python_batch_picking.ipynb).
 
 ## Compile-time and memory
 
@@ -138,6 +139,8 @@ actual output, and the figures it draws, which are regenerated from the code by
 - [Mesh vs mesh cell pairs](docs/examples/mesh_mesh.md)
 - [KDTree nearest neighbors and its partition](docs/examples/kdtree_knn.md)
 - [Rendering a CG1 finite element field](docs/examples/cg1_field.md)
+
+From **Python**: [non-overlapping ellipsoid batches, in a Jupyter notebook](examples/python_batch_picking.ipynb) — the batch-picking example via the bindings, with figures rendered inline (GitHub renders the executed notebook).
 
 ## Building and testing
 
