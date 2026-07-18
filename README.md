@@ -7,8 +7,8 @@ Python bindings; Eigen is the only dependency.
 
 [![CI](https://github.com/NickAlger/ellipsoid_tree/actions/workflows/ci.yml/badge.svg)](https://github.com/NickAlger/ellipsoid_tree/actions/workflows/ci.yml)
 [![Docs](https://img.shields.io/badge/docs-API%20reference-blue)](https://nickalger.github.io/ellipsoid_tree/)
-[![PyPI](https://img.shields.io/pypi/v/ellipsoid-tree)](https://pypi.org/project/ellipsoid-tree/)
-[![Python versions](https://img.shields.io/pypi/pyversions/ellipsoid-tree)](https://pypi.org/project/ellipsoid-tree/)
+[![PyPI](https://img.shields.io/pypi/v/ellipsoid-tree?cacheSeconds=3600)](https://pypi.org/project/ellipsoid-tree/)
+[![Python versions](https://img.shields.io/pypi/pyversions/ellipsoid-tree?cacheSeconds=3600)](https://pypi.org/project/ellipsoid-tree/)
 [![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 <p align="center">
