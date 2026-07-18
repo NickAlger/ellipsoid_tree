@@ -56,3 +56,8 @@ endif()
 if(ETREE_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
+
+option(ETREE_BUILD_PYTHON "Build the etree Python bindings (pybind11 via FetchContent)" OFF)
+if(ETREE_BUILD_PYTHON)
+    add_subdirectory(bindings)
+endif()

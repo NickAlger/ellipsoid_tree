@@ -26,6 +26,23 @@ jobs:
         if: matrix.compiler == 'g++'
         run: python3 docs/generate_examples.py --build-dir build --check
 
+  python-bindings:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install dependencies
+        run: |
+          sudo apt-get update && sudo apt-get install -y libeigen3-dev python3-dev
+          python3 -m pip install numpy pytest
+      - name: Configure
+        run: >
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DETREE_BUILD_PYTHON=ON
+          -DETREE_BUILD_TESTS=OFF -DETREE_BUILD_EXAMPLES=OFF
+      - name: Build
+        run: cmake --build build -j --target etree_python
+      - name: Test
+        run: PYTHONPATH=build/bindings python3 -m pytest bindings/tests -q
+
   sanitizers:
     runs-on: ubuntu-latest
     strategy:
