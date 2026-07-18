@@ -19,7 +19,7 @@ jobs:
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_CXX_COMPILER=${{ matrix.compiler }}
       - name: Build
-        run: cmake --build build -j
+        run: cmake --build build -j $(nproc)
       - name: Test
         run: ctest --test-dir build --output-on-failure
       - name: Check example documentation is current
@@ -51,7 +51,7 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DETREE_BUILD_PYTHON=ON
           -DETREE_BUILD_TESTS=OFF -DETREE_BUILD_EXAMPLES=OFF
       - name: Build
-        run: cmake --build build -j --target etree_python
+        run: cmake --build build -j $(nproc) --target etree_python
       - name: Test
         run: PYTHONPATH=build/bindings python3 -m pytest bindings/tests -q
 
@@ -70,6 +70,7 @@ jobs:
           cmake -S . -B build -DCMAKE_BUILD_TYPE=RelWithDebInfo
           -DCMAKE_CXX_FLAGS="-fsanitize=${{ matrix.sanitizer }} -fno-omit-frame-pointer"
       - name: Build
-        run: cmake --build build -j
+        # Sanitizer TUs are the most memory-hungry; cap harder to avoid OOM on the runner.
+        run: cmake --build build -j 2
       - name: Test
         run: ctest --test-dir build --output-on-failure
