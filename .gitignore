@@ -70,3 +70,7 @@ Testing/
 
 # Pre-library reference implementation (never commit; brent_minimize.h is scipy-derived)
 original/
+
+# Python
+__pycache__/
+*.pyc
