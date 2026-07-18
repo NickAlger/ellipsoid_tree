@@ -1,48 +1,86 @@
 # etree
 
-**Exact ellipsoid intersection tests and spatial trees.** Header-only C++17,
-no CGAL, no Boost — Eigen is the only dependency.
+**Exact intersection tests for ellipsoids and friends — in any dimension.**
+Points, boxes, balls, ellipsoids, and simplices in R^d; single pairs,
+tree-accelerated queries, and tree-vs-tree sweeps. Header-only C++17 with
+Python bindings; Eigen is the only dependency (no CGAL, no Boost).
 
 <p align="center">
 <img src="docs/img/batch_picking__batches.svg" width="640">
 </p>
 
-*Above: a family of anisotropic ellipsoids partitioned into batches of
-mutually non-overlapping members ([example](docs/examples/batch_picking.md)) —
-the geometric kernel of point-spread-function probing, where impulse
-responses with disjoint supports can be probed in a single operator
-application.*
+*A family of anisotropic ellipsoids partitioned into batches of mutually
+non-overlapping members ([example](docs/examples/batch_picking.md)) — the
+geometric kernel of point-spread-function probing. The figures throughout
+are 2D only because the built-in visualization is 2D; the library itself is
+dimension-generic, and the test suite exercises d = 1 through 6.*
 
-## What it does
+## The design in one idea
 
-- **Pairwise intersection tests** between points, boxes, balls, ellipsoids,
-  simplices, segments, and halfspaces — see the
-  [visual gallery of every pair](docs/examples/intersections_gallery.md).
-  Ellipsoid–ellipsoid overlap is the exact Gilitschenski–Hanebeck test;
-  ellipsoid-vs-simplex/box are small exact convex solvers; simplex–simplex
-  is an LP feasibility test; the rest are closed form.
-- **Spatial trees** over each object type (`BoxTree`, `BallTree`,
-  `EllipsoidTree`, `SimplexTree`): "which elements intersect this query?"
-  in logarithmic time, for any query type in the table, with tiered
-  exact pruning for ellipsoid queries.
-- **Tree-vs-tree collision** by dual-tree simultaneous descent:
-  all intersecting pairs between two families in one traversal, including
-  self-collision (the input to batch picking).
+etree is organized around a small closed system:
+
+**Objects.** Five geometric types — `point`, `Box`, `Ball`, `Ellipsoid`,
+`Simplex` — all convex, all dimension-generic. A `Simplex` may be
+lower-dimensional (a point, segment, or triangle embedded in R^d). Two more
+types participate as queries only: `Segment` and `Halfspace`.
+
+**Trees over each type.** `BoxTree`, `BallTree`, `EllipsoidTree`, and
+`SimplexTree` index a family of objects for logarithmic-time queries
+(`SimplexMesh` adds mesh connectivity on top of a cell tree; a point cloud
+is a `BallTree` with zero radii).
+
+**Intersections at three levels**, all built from one table of exact
+pairwise tests:
+
+| level | call | what you get |
+| --- | --- | --- |
+| object × object | `intersects(A, B)` | one exact test |
+| tree × object | `tree.collisions(B)` | every member of a family intersecting `B` |
+| tree × tree | `collision_pairs(T1, T2)` | every intersecting pair between two families, in one simultaneous descent of both trees |
+
+The diagonal of the third level is self-collision
+(`tree.self_collision_pairs()`), which yields the overlap graph of a family —
+the input to [batch picking](docs/examples/batch_picking.md); tree × tree
+over two meshes' cell trees is [mesh × mesh collision](docs/examples/mesh_mesh.md),
+the kernel of supermeshing.
+
+## The intersection table
+
+The algorithm behind each cell of `intersects` (all exact; solver-backed
+cells to documented tolerance). See the
+[visual gallery of every pair](docs/examples/intersections_gallery.md).
+
+| ∩ | point | `Box` | `Ball` | `Ellipsoid` | `Simplex` |
+| --- | --- | --- | --- | --- | --- |
+| **point** | — | coordinate bounds | distance | Mahalanobis test (LDLT) | barycentric solve |
+| **`Box`** | | interval overlap | clamped closest point | projected coordinate-descent QP | phase-I LP |
+| **`Ball`** | | | center distance | Gilitschenski–Hanebeck with Σ = r²I | face-enumeration projection (Euclidean) |
+| **`Ellipsoid`** | | | | generalized eigenproblem + 1D minimization (Gilitschenski–Hanebeck) | face-enumeration projection in the Σ⁻¹ metric |
+| **`Simplex`** | | | | | phase-I LP (convex hull vs convex hull) |
+
+Query-only columns: a `Segment` is tested by the slab method (box),
+projection (ball), a 1D quadratic (ellipsoid), or coordinate intervals
+(simplex); a `Halfspace` is a closed-form support-function comparison
+against everything.
+
+Conventions: ellipsoids are E(τ) = {x : (x−μ)ᵀ Σ⁻¹ (x−μ) ≤ τ²} with Σ
+symmetric positive definite and the scale τ passed at call time. All objects
+are solid and closed, so touching counts as intersecting. Tree queries prune
+conservatively (an ellipsoid query uses a bounding-box test and then the
+exact ellipsoid-box QP on survivors), so acceleration never changes answers.
+
+## Beyond intersections
+
 - **Simplicial meshes** (`SimplexMesh`): point location with barycentric
   coordinates, closest boundary point, CG1 finite element evaluation,
-  mesh × ellipsoid and [mesh × mesh](docs/examples/mesh_mesh.md) queries.
+  [mesh × ellipsoid](docs/examples/mesh_queries.md) and
+  [mesh × mesh](docs/examples/mesh_mesh.md) queries.
 - **Supporting cast**: k-nearest-neighbor `KDTree`, axis-alternating
   `geometric_sort`, greedy non-overlapping
   [ellipsoid batch picking](docs/examples/batch_picking.md).
 - **Optional zero-dependency 2D visualization** (`etree/plot2d.hpp`):
   SVG and PNG figures of objects, trees, queries, and CG1 fields — every
   figure in the documentation is drawn with it.
-
-Ellipsoids follow the convention E(τ) = {x : (x−μ)ᵀ Σ⁻¹ (x−μ) ≤ τ²} with
-Σ symmetric positive definite; the scale τ is passed at call time. All
-objects are solid and closed (touching counts as intersecting); the
-solver-backed tests are exact up to documented solver tolerances.
-Everything is dimension-generic except the visualization (2D).
 
 ## Quick start
 
