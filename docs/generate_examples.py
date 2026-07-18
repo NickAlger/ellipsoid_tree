@@ -141,7 +141,15 @@ def main() -> int:
         index_lines.append(f"- [{title}](examples/{name}.md)")
         print(f"generated docs/examples/{name}.md ({len(figure_names)} figures)")
 
-    index_lines.append("")
+    index_lines += [
+        "",
+        "## Python",
+        "",
+        "- [Non-overlapping ellipsoid batches (Jupyter notebook)]"
+        "(../examples/python_batch_picking.ipynb) — the batch-picking example via the "
+        "Python bindings; re-executed in CI (outputs not diffed) and rendered inline by GitHub.",
+        "",
+    ]
     (DOCS_DIR / "README.md").write_text("\n".join(index_lines))
 
     if args.check:
