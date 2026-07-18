@@ -114,6 +114,16 @@ arrays, scipy-style), and figures render inline in Jupyter. Alternatively,
 build the module without pip via
 `cmake -B build -DETREE_BUILD_PYTHON=ON && cmake --build build --target etree_python`.
 
+## Compile-time and memory
+
+etree is header-only but includes Eigen, so every translation unit that
+includes an etree header pays Eigen's compile cost — roughly 1.5 s and ~180 MB
+of RAM per file (a precompiled header cuts that to ~0.2 s and ~125 MB). This is
+normal for an Eigen-based library, but it adds up if you include etree in many
+files. On a memory-limited machine, don't over-parallelize the build: keep at
+least ~1 GB of RAM per compile job (for example `cmake --build . -j N` with N no
+larger than your RAM in GB), or set up a precompiled header on your side.
+
 ## Examples ("show, don't tell")
 
 Every page in [`docs/examples/`](docs/README.md) is a complete program, its
