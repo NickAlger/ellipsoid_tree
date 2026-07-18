@@ -58,9 +58,24 @@ std::vector<int> hits = tree.collisions(some_box);
 auto batches = pick_ellipsoid_batches(tree);
 ```
 
-CMake: `add_subdirectory(ellipsoid_tree)` (or FetchContent) and link
-`etree::etree`; Eigen is found via `find_package(Eigen3)` with an automatic
-pinned download as fallback.
+## Installing
+
+**C++** — three equivalent routes, all ending in `target_link_libraries(your_target PRIVATE etree::etree)`:
+
+- vendor or FetchContent this repo and `add_subdirectory(ellipsoid_tree)`;
+- or install it: `cmake -S . -B build && cmake --install build --prefix <prefix>`,
+  then `find_package(etree REQUIRED)` from any project with `<prefix>` on
+  `CMAKE_PREFIX_PATH`;
+- or just add `include/` to your include path (header-only; Eigen required).
+
+Eigen is found via `find_package(Eigen3)`, with an automatic pinned download
+as fallback when building this repo standalone.
+
+**Python** — `pip install .` (or `pip install git+https://github.com/NickAlger/ellipsoid_tree`)
+builds the `etree` module via scikit-build-core; points are rows (`(n, d)`
+arrays, scipy-style), and figures render inline in Jupyter. Alternatively,
+build the module without pip via
+`cmake -B build -DETREE_BUILD_PYTHON=ON && cmake --build build --target etree_python`.
 
 ## Examples ("show, don't tell")
 

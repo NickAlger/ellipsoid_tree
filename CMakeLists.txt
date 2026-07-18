@@ -61,3 +61,40 @@ option(ETREE_BUILD_PYTHON "Build the etree Python bindings (pybind11 via FetchCo
 if(ETREE_BUILD_PYTHON)
     add_subdirectory(bindings)
 endif()
+
+# ------------------------- Installation / CMake package export -------------------------
+# Default ON when built standalone, OFF as a subproject and OFF inside pip
+# builds (scikit-build-core would otherwise install the headers into the wheel).
+if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR AND NOT SKBUILD)
+    set(ETREE_INSTALL_DEFAULT ON)
+else()
+    set(ETREE_INSTALL_DEFAULT OFF)
+endif()
+option(ETREE_INSTALL "Generate install and CMake package export rules" ${ETREE_INSTALL_DEFAULT})
+
+if(ETREE_INSTALL)
+    include(GNUInstallDirs)
+    include(CMakePackageConfigHelpers)
+
+    install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+    install(TARGETS etree EXPORT etreeTargets)
+    install(EXPORT etreeTargets
+        FILE etreeTargets.cmake
+        NAMESPACE etree::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+
+    configure_package_config_file(
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/etreeConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+    write_basic_package_version_file(
+        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfigVersion.cmake
+        VERSION ${PROJECT_VERSION}
+        COMPATIBILITY SameMajorVersion
+        ARCH_INDEPENDENT)
+    install(FILES
+        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+    install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR})
+endif()

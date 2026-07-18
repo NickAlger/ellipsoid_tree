@@ -1,0 +1,33 @@
+# SPDX-License-Identifier: MIT
+[build-system]
+requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
+build-backend = "scikit_build_core.build"
+
+[project]
+# NOTE: the distribution name is provisional — check availability before any
+# PyPI upload (the import name stays `etree` regardless).
+name = "etree"
+version = "0.1.0"
+description = "Exact ellipsoid intersection tests and spatial trees (header-only C++ core with Python bindings)"
+readme = "README.md"
+license = { file = "LICENSE" }
+authors = [{ name = "Nick Alger" }]
+requires-python = ">=3.8"
+dependencies = ["numpy"]
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: C++",
+    "Programming Language :: Python :: 3",
+    "Topic :: Scientific/Engineering :: Mathematics",
+]
+
+[project.urls]
+Homepage = "https://github.com/NickAlger/ellipsoid_tree"
+
+[tool.scikit-build]
+cmake.version = ">=3.16"
+
+[tool.scikit-build.cmake.define]
+ETREE_BUILD_PYTHON = "ON"
+ETREE_BUILD_TESTS = "OFF"
+ETREE_BUILD_EXAMPLES = "OFF"

@@ -74,3 +74,8 @@ original/
 # Python
 __pycache__/
 *.pyc
+
+# Python packaging
+dist/
+*.whl
+*.egg-info/
