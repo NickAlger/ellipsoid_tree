@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// k-nearest-neighbor search: median-split kd-tree with contiguous leaf
-// blocks. Points are stored permuted into tree order so leaf blocks scan
-// linearly; the median point of each internal range doubles as its splitting
-// plane. Build is O(n log n) via nth_element.
+/// @file
+/// @brief k-nearest-neighbor search: median-split kd-tree with contiguous leaf blocks.
+///
+/// Points are stored permuted into tree order so leaf blocks scan linearly;
+/// the median point of each internal range doubles as its splitting plane.
+/// Build is O(n log n) via nth_element.
 
 #include <algorithm>
 #include <limits>
@@ -21,10 +23,14 @@
 
 namespace etree {
 
+/// k-nearest-neighbor kd-tree over a fixed set of points.
+///
+/// Construct from a (dim, n) matrix whose columns are the points, then call
+/// query() for the k nearest neighbors of one or more query points.
 class KDTree
 {
 public:
-    int block_size = 32; // leaf ranges of at most this many points are scanned linearly
+    int block_size = 32; ///< Leaf ranges of at most this many points are scanned linearly.
 
     KDTree() = default;
 
@@ -55,16 +61,16 @@ public:
     int size() const { return num_pts_; }
     int dim() const  { return dim_; }
 
-    // Structure inspection (e.g. for visualization): points permuted into
-    // tree order, the internal->external index map, and the leaf-block size
-    // the current layout was built with.
+    /// Structure inspection (e.g. for visualization): points permuted into
+    /// tree order, the internal->external index map, and the leaf-block size
+    /// the current layout was built with.
     const Eigen::MatrixXd& ordered_points() const     { return points_; }
-    int external_index( int internal_index ) const    { return perm_i2e_(internal_index); }
-    int built_block_size() const                      { return built_block_size_; }
+    int external_index( int internal_index ) const    { return perm_i2e_(internal_index); } ///< Internal (tree-order) index -> external (original input) index.
+    int built_block_size() const                      { return built_block_size_; } ///< Leaf-block size the current layout was built with.
 
-    // k nearest neighbors of each query point (columns). Returns (indices,
-    // squared distances), each of shape (k_eff, num_queries) with
-    // k_eff = min(k, size()), sorted by increasing distance per query.
+    /// k nearest neighbors of each query point (columns). Returns (indices,
+    /// squared distances), each of shape (k_eff, num_queries) with
+    /// k_eff = min(k, size()), sorted by increasing distance per query.
     std::pair<Eigen::MatrixXi, Eigen::MatrixXd>
     query( const Eigen::Ref<const Eigen::MatrixXd>& query_points,
            int num_neighbors,

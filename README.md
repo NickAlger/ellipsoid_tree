@@ -158,6 +158,8 @@ python3 docs/generate_examples.py   # regenerate the example documentation
   Prentice-Hall, 1973 — the scalar minimizer used inside it.
 - [Eigen](https://eigen.tuxfamily.org) for linear algebra;
   [stb_image_write](https://github.com/nothings/stb) (public domain) for PNG
-  encoding; [doctest](https://github.com/doctest/doctest) for testing.
+  encoding; [doctest](https://github.com/doctest/doctest) for testing;
+  [doxygen-awesome-css](https://github.com/jothepro/doxygen-awesome-css) for the
+  API-reference theme.
 
 MIT license.

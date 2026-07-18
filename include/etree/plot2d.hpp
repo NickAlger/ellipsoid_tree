@@ -2,21 +2,24 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// Optional 2D visualization: build a figure from the library's geometric
-// objects and trees, then write it as an SVG (vector; ellipses keep their
-// true center/axes/rotation as readable XML). This header is deliberately
-// NOT included by the etree.hpp umbrella — include it only if you want it.
-// It has no dependencies beyond the library itself.
-//
-//   Plot2D fig;
-//   fig.add(ellipsoid, tau, Style{...});
-//   draw_tree(fig, ellipsoid_tree, {});         // objects + AABB hierarchy
-//   draw_kdtree(fig, kd);                       // splitting-line partition
-//   draw_batches(fig, ellipsoid_tree, batches); // color by batch
-//   fig.save_svg("figure.svg");                 // axes with physical extents
-//
-// All draw functions require dim() == 2 and throw std::invalid_argument
-// otherwise. A PNG raster backend is planned as a follow-up.
+/// @file
+/// @brief Build a 2D figure from the library's geometric objects and trees and write it as SVG or PNG.
+///
+/// Optional 2D visualization: build a figure from the library's geometric
+/// objects and trees, then write it as an SVG (vector; ellipses keep their
+/// true center/axes/rotation as readable XML). This header is deliberately
+/// NOT included by the etree.hpp umbrella — include it only if you want it.
+/// It has no dependencies beyond the library itself.
+///
+///   Plot2D fig;
+///   fig.add(ellipsoid, tau, Style{...});
+///   draw_tree(fig, ellipsoid_tree, {});         // objects + AABB hierarchy
+///   draw_kdtree(fig, kd);                       // splitting-line partition
+///   draw_batches(fig, ellipsoid_tree, batches); // color by batch
+///   fig.save_svg("figure.svg");                 // axes with physical extents
+///
+/// All draw functions require dim() == 2 and throw std::invalid_argument
+/// otherwise. A PNG raster backend is planned as a follow-up.
 
 #include <algorithm>
 #include <cmath>
@@ -44,9 +47,10 @@ namespace etree {
 //  Colors and styles
 // ------------------------------------------------------------------
 
+/// An RGBA color with components in [0, 1].
 struct Color
 {
-    double r = 0.0, g = 0.0, b = 0.0, a = 1.0; // components in [0, 1]
+    double r = 0.0, g = 0.0, b = 0.0, a = 1.0; ///< Components in [0, 1] (red, green, blue, alpha).
 };
 
 namespace colors {
@@ -78,16 +82,18 @@ inline Color with_alpha( Color c, double a )
     return c;
 }
 
+/// Stroke and fill styling for a drawn primitive.
 struct Style
 {
-    Color  stroke       = colors::black();
-    double stroke_width = 1.3;                  // in canvas pixels
-    Color  fill         = colors::transparent();
+    Color  stroke       = colors::black(); ///< Outline (stroke) color.
+    double stroke_width = 1.3;                  ///< Stroke width in canvas pixels.
+    Color  fill         = colors::transparent(); ///< Interior fill color.
 };
 
+/// Horizontal text alignment relative to the anchor point.
 enum class TextAnchor { start, middle, end };
 
-// The viridis colormap, t in [0, 1].
+/// The viridis colormap, t in [0, 1].
 inline Color colormap_viridis( double t )
 {
     Color c;
@@ -96,11 +102,12 @@ inline Color colormap_viridis( double t )
     return c;
 }
 
+/// An in-memory RGB raster produced by Plot2D::render_rgb.
 struct RenderedImage
 {
-    int width  = 0;
-    int height = 0;
-    std::vector<unsigned char> rgb; // row-major, 3 bytes per pixel
+    int width  = 0; ///< Image width in pixels.
+    int height = 0; ///< Image height in pixels.
+    std::vector<unsigned char> rgb; ///< Pixels, row-major, 3 bytes (RGB) per pixel.
 };
 
 
@@ -108,10 +115,11 @@ struct RenderedImage
 //  Plot2D: a world-coordinate scene with an SVG writer
 // ------------------------------------------------------------------
 
+/// A world-coordinate 2D scene of drawable primitives with SVG and PNG writers.
 class Plot2D
 {
 public:
-    // Add geometric objects (world coordinates, y up)
+    /// Add geometric objects (world coordinates, y up)
     void add( const Ellipsoid& E, double tau, const Style& style )
     {
         require_dim2(static_cast<int>(E.mu.size()), "Ellipsoid");
@@ -128,6 +136,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
+    /// Add a ball to the scene.
     void add( const Ball& B, const Style& style )
     {
         require_dim2(static_cast<int>(B.center.size()), "Ball");
@@ -142,6 +151,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
+    /// Add an axis-aligned box to the scene.
     void add( const Box& B, const Style& style )
     {
         require_dim2(static_cast<int>(B.lo.size()), "Box");
@@ -154,6 +164,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
+    /// Add a line segment to the scene.
     void add( const Segment& S, const Style& style )
     {
         require_dim2(static_cast<int>(S.a.size()), "Segment");
@@ -163,6 +174,7 @@ public:
         add_polyline(pts, style, /*closed=*/false);
     }
 
+    /// Add a simplex (drawn as a point, segment, or filled polygon) to the scene.
     void add( const Simplex& S, const Style& style )
     {
         require_dim2(static_cast<int>(S.V.rows()), "Simplex");
@@ -192,6 +204,7 @@ public:
         }
     }
 
+    /// Add a halfspace, drawn as a boundary line clipped to the plot bounds.
     void add( const Halfspace& H, const Style& style )
     {
         require_dim2(static_cast<int>(H.normal.size()), "Halfspace");
@@ -203,7 +216,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
-    // Marker radius is in canvas pixels (independent of zoom)
+    /// Marker radius is in canvas pixels (independent of zoom)
     void add_marker( const Eigen::Ref<const Eigen::Vector2d>& pt, double radius_px, const Style& style )
     {
         Primitive p;
@@ -215,6 +228,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
+    /// Add a polyline through the given points, or a closed polygon when closed is true.
     void add_polyline( const Eigen::Ref<const Eigen::MatrixXd>& pts, const Style& style, bool closed = false )
     {
         require_dim2(static_cast<int>(pts.rows()), "polyline");
@@ -229,6 +243,7 @@ public:
         prims_.push_back(std::move(p));
     }
 
+    /// Add a text label at pt (text size in canvas pixels).
     void add_text( const Eigen::Ref<const Eigen::Vector2d>& pt, std::string text,
                    double size_px = 12.0, Color color = colors::black(),
                    TextAnchor anchor = TextAnchor::start )
@@ -244,11 +259,11 @@ public:
         prims_.push_back(std::move(p));
     }
 
-    // Triangle carrying normalized scalar values t in [0, 1] at its vertices:
-    // the PNG backend interpolates the VALUE barycentrically per pixel and
-    // applies the viridis colormap there, so the colormap curve is followed
-    // exactly even on coarse meshes (unlike Gouraud color interpolation).
-    // SVG falls back to a flat fill at the mean value.
+    /// Triangle carrying normalized scalar values t in [0, 1] at its vertices:
+    /// the PNG backend interpolates the VALUE barycentrically per pixel and
+    /// applies the viridis colormap there, so the colormap curve is followed
+    /// exactly even on coarse meshes (unlike Gouraud color interpolation).
+    /// SVG falls back to a flat fill at the mean value.
     void add_cg1_triangle( const Eigen::Ref<const Eigen::MatrixXd>& pts,
                            double t0, double t1, double t2 )
     {
@@ -269,8 +284,8 @@ public:
         prims_.push_back(std::move(p));
     }
 
-    // Triangle with per-vertex colors: barycentric color interpolation in the
-    // PNG backend (Gouraud); flat average-color fill in SVG. pts has shape (2, 3).
+    /// Triangle with per-vertex colors: barycentric color interpolation in the
+    /// PNG backend (Gouraud); flat average-color fill in SVG. pts has shape (2, 3).
     void add_filled_triangle( const Eigen::Ref<const Eigen::MatrixXd>& pts,
                               const Color& c0, const Color& c1, const Color& c2 )
     {
@@ -291,16 +306,17 @@ public:
         prims_.push_back(std::move(p));
     }
 
-    // Axes with the physical extents of the drawn data (on by default)
+    /// Axes with the physical extents of the drawn data (on by default)
     void axes( bool on ) { axes_on_ = on; }
 
-    // Override the automatic (data + 5% pad) plot bounds
+    /// Override the automatic (data + 5% pad) plot bounds
     void set_bounds( const Box& bounds )
     {
         user_bounds_    = bounds;
         has_user_bounds_ = true;
     }
 
+    /// Write the figure to an SVG file at the given pixel width.
     void save_svg( const std::string& path, int width_px = 900 ) const
     {
         std::ofstream out(path);
@@ -311,6 +327,7 @@ public:
         out << to_svg(width_px);
     }
 
+    /// Return the figure as an SVG document string at the given pixel width.
     std::string to_svg( int width_px = 900 ) const
     {
         const Frame fr = make_frame(width_px);
@@ -342,7 +359,7 @@ public:
         return svg;
     }
 
-    // Rasterize the figure (white background, 1px antialiasing).
+    /// Rasterize the figure (white background, 1px antialiasing).
     RenderedImage render_rgb( int width_px = 900 ) const
     {
         const Frame fr = make_frame(width_px);
@@ -366,6 +383,7 @@ public:
         return out;
     }
 
+    /// Write the figure to a PNG file at the given pixel width.
     void save_png( const std::string& path, int width_px = 900 ) const
     {
         const RenderedImage im = render_rgb(width_px);
@@ -1104,17 +1122,18 @@ private:
 //  Tree drawing
 // ------------------------------------------------------------------
 
+/// Options controlling what draw_tree renders and how.
 struct DrawTreeOptions
 {
-    bool objects    = true;
-    bool leaf_boxes = false; // bounding box of each element
-    bool node_boxes = true;  // composite boxes of the AABB hierarchy
-    int  max_depth  = -1;    // draw node boxes down to this depth only (-1: all)
-    bool color_node_boxes_by_depth = true;
+    bool objects    = true; ///< Draw the stored objects.
+    bool leaf_boxes = false; ///< bounding box of each element
+    bool node_boxes = true;  ///< composite boxes of the AABB hierarchy
+    int  max_depth  = -1;    ///< draw node boxes down to this depth only (-1: all)
+    bool color_node_boxes_by_depth = true; ///< Color node boxes by their depth in the hierarchy.
 
-    Style object_style   = Style{colors::blue(), 1.3, with_alpha(colors::blue(), 0.15)};
-    Style leaf_box_style = Style{colors::gray(), 0.8, colors::transparent()};
-    Style node_box_style = Style{colors::black(), 1.0, colors::transparent()};
+    Style object_style   = Style{colors::blue(), 1.3, with_alpha(colors::blue(), 0.15)}; ///< Style for the stored objects.
+    Style leaf_box_style = Style{colors::gray(), 0.8, colors::transparent()}; ///< Style for the per-element leaf boxes.
+    Style node_box_style = Style{colors::black(), 1.0, colors::transparent()}; ///< Style for the hierarchy node boxes.
 };
 
 namespace detail {
@@ -1166,49 +1185,56 @@ inline void draw_tree_impl( Plot2D& fig, const AABBTree& tree, int num_objects,
 
 } // end namespace detail
 
+/// Draw an EllipsoidTree's objects and its AABB node hierarchy.
 inline void draw_tree( Plot2D& fig, const EllipsoidTree& T, DrawTreeOptions opts = DrawTreeOptions() )
 {
     detail::draw_tree_impl(fig, T.tree(), T.size(), opts,
         [&]( int ii ) { fig.add(T.object(ii), T.tau(), opts.object_style); });
 }
 
+/// Draw a BoxTree's objects and its AABB node hierarchy.
 inline void draw_tree( Plot2D& fig, const BoxTree& T, DrawTreeOptions opts = DrawTreeOptions() )
 {
     detail::draw_tree_impl(fig, T.tree(), T.size(), opts,
         [&]( int ii ) { fig.add(T.object(ii), opts.object_style); });
 }
 
+/// Draw a BallTree's objects and its AABB node hierarchy.
 inline void draw_tree( Plot2D& fig, const BallTree& T, DrawTreeOptions opts = DrawTreeOptions() )
 {
     detail::draw_tree_impl(fig, T.tree(), T.size(), opts,
         [&]( int ii ) { fig.add(T.object(ii), opts.object_style); });
 }
 
+/// Draw a SimplexTree's objects and its AABB node hierarchy.
 inline void draw_tree( Plot2D& fig, const SimplexTree& T, DrawTreeOptions opts = DrawTreeOptions() )
 {
     detail::draw_tree_impl(fig, T.tree(), T.size(), opts,
         [&]( int ii ) { fig.add(T.object(ii), opts.object_style); });
 }
 
-// Draw only the listed elements (e.g. the results of a collision query).
+/// Draw only the listed elements (e.g. the results of a collision query).
 inline void draw_elements( Plot2D& fig, const EllipsoidTree& T, const std::vector<int>& inds, const Style& style )
 {
     for ( int ii : inds ) { fig.add(T.object(ii), T.tau(), style); }
 }
+/// Draw the listed box elements in the given style.
 inline void draw_elements( Plot2D& fig, const BoxTree& T, const std::vector<int>& inds, const Style& style )
 {
     for ( int ii : inds ) { fig.add(T.object(ii), style); }
 }
+/// Draw the listed ball elements in the given style.
 inline void draw_elements( Plot2D& fig, const BallTree& T, const std::vector<int>& inds, const Style& style )
 {
     for ( int ii : inds ) { fig.add(T.object(ii), style); }
 }
+/// Draw the listed simplex elements in the given style.
 inline void draw_elements( Plot2D& fig, const SimplexTree& T, const std::vector<int>& inds, const Style& style )
 {
     for ( int ii : inds ) { fig.add(T.object(ii), style); }
 }
 
-// Ellipsoids colored by batch (from pick_ellipsoid_batches).
+/// Ellipsoids colored by batch (from pick_ellipsoid_batches).
 inline void draw_batches( Plot2D& fig, const EllipsoidTree& T,
                           const std::vector<std::vector<int>>& batches,
                           double fill_alpha = 0.3, double stroke_width = 1.3 )
@@ -1229,18 +1255,20 @@ inline void draw_batches( Plot2D& fig, const EllipsoidTree& T,
 //  kd-tree drawing: recursive splitting lines through the median points
 // ------------------------------------------------------------------
 
+/// Options controlling what draw_kdtree renders and how.
 struct DrawKDTreeOptions
 {
-    bool   points    = true;
-    bool   splits    = true;
-    int    max_depth = -1;   // draw splitting lines down to this depth (-1: all)
-    double marker_radius_px = 2.5;
-    bool   color_splits_by_depth = true;
+    bool   points    = true; ///< Draw the stored points as markers.
+    bool   splits    = true; ///< Draw the recursive splitting lines.
+    int    max_depth = -1;   ///< draw splitting lines down to this depth (-1: all)
+    double marker_radius_px = 2.5; ///< Point marker radius in canvas pixels.
+    bool   color_splits_by_depth = true; ///< Color splitting lines by their recursion depth.
 
-    Style point_style = Style{colors::transparent(), 0.0, colors::black()};
-    Style split_style = Style{colors::black(), 1.1, colors::transparent()};
+    Style point_style = Style{colors::transparent(), 0.0, colors::black()}; ///< Style for the point markers.
+    Style split_style = Style{colors::black(), 1.1, colors::transparent()}; ///< Style for the splitting lines.
 };
 
+/// Draw a kd-tree: its recursive splitting lines and the stored points.
 inline void draw_kdtree( Plot2D& fig, const KDTree& T, DrawKDTreeOptions opts = DrawKDTreeOptions() )
 {
     if ( T.size() == 0 )
@@ -1313,17 +1341,18 @@ inline void draw_kdtree( Plot2D& fig, const KDTree& T, DrawKDTreeOptions opts = 
 //  CG1 (piecewise linear) scalar field rendering
 // ------------------------------------------------------------------
 
+/// Options controlling how draw_cg1_field maps field values to colors.
 struct FieldOptions
 {
-    double vmin = std::numeric_limits<double>::quiet_NaN(); // NaN: use the data minimum
-    double vmax = std::numeric_limits<double>::quiet_NaN(); // NaN: use the data maximum
-    bool   wireframe  = false;
-    Style  wire_style = Style{with_alpha(colors::black(), 0.35), 0.5, colors::transparent()};
+    double vmin = std::numeric_limits<double>::quiet_NaN(); ///< NaN: use the data minimum
+    double vmax = std::numeric_limits<double>::quiet_NaN(); ///< NaN: use the data maximum
+    bool   wireframe  = false; ///< Overlay the triangle edges.
+    Style  wire_style = Style{with_alpha(colors::black(), 0.35), 0.5, colors::transparent()}; ///< Style for the wireframe overlay.
 };
 
-// Render a CG1 nodal field on a 2D SimplexMesh through the viridis colormap.
-// The PNG backend interpolates colors barycentrically per pixel (a
-// dependency-free tripcolor); the SVG backend uses flat per-triangle fill.
+/// Render a CG1 nodal field on a 2D SimplexMesh through the viridis colormap.
+/// The PNG backend interpolates colors barycentrically per pixel (a
+/// dependency-free tripcolor); the SVG backend uses flat per-triangle fill.
 inline void draw_cg1_field( Plot2D& fig, const SimplexMesh& mesh,
                             const Eigen::Ref<const Eigen::VectorXd>& vertex_values,
                             FieldOptions opts = FieldOptions() )

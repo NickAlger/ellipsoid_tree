@@ -1,7 +1,11 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// etree — ellipsoid intersection tests and spatial trees.
-// Header-only C++17; depends only on Eigen. https://github.com/NickAlger/ellipsoid_tree
+
+/// @file
+/// @brief Umbrella header — includes the whole etree public API.
+///
+/// etree: ellipsoid intersection tests and spatial trees. Header-only C++17;
+/// depends only on Eigen. https://github.com/NickAlger/ellipsoid_tree
 
 #define ETREE_VERSION_MAJOR 0
 #define ETREE_VERSION_MINOR 1

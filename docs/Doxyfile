@@ -1,0 +1,47 @@
+# Doxygen configuration for the etree API reference.
+# Only non-default options are set; everything else uses Doxygen's defaults.
+# Rendered with the vendored doxygen-awesome-css theme (docs/doxygen-awesome/, MIT).
+# Build from the repository root:  doxygen docs/Doxyfile
+
+PROJECT_NAME           = "etree"
+PROJECT_NUMBER         = 0.1.0
+PROJECT_BRIEF          = "Exact intersection tests for ellipsoids and friends"
+OUTPUT_DIRECTORY       = docs/_build/doxygen
+
+# --- Inputs -------------------------------------------------------------
+INPUT                  = include/etree docs/mainpage.md
+FILE_PATTERNS          = *.hpp *.md
+RECURSIVE              = YES
+EXCLUDE_PATTERNS       = */detail/*
+EXCLUDE_SYMBOLS        = *::detail *::detail::*
+USE_MDFILE_AS_MAINPAGE = docs/mainpage.md
+STRIP_FROM_PATH        = include
+STRIP_FROM_INC_PATH    = include
+
+# --- Public surface: the whole non-detail API (detail/ excluded above) --
+# EXTRACT_ALL shows every public symbol so nothing user-facing is silently
+# dropped for lacking a comment; the doc prose we added enriches it where present.
+EXTRACT_ALL            = YES
+HIDE_UNDOC_MEMBERS     = NO
+HIDE_UNDOC_CLASSES     = NO
+JAVADOC_AUTOBRIEF      = YES
+MARKDOWN_SUPPORT       = YES
+SORT_MEMBER_DOCS       = NO
+QUIET                  = YES
+WARN_IF_UNDOCUMENTED   = NO
+GENERATE_LATEX         = NO
+# API reference, not a source browser — source lives on GitHub. This also keeps
+# internal (detail) implementation out of the rendered site.
+VERBATIM_HEADERS       = NO
+
+# --- HTML + doxygen-awesome theme ---------------------------------------
+GENERATE_HTML          = YES
+GENERATE_TREEVIEW      = YES
+DISABLE_INDEX          = NO
+FULL_SIDEBAR           = NO
+HTML_COLORSTYLE        = LIGHT
+HTML_EXTRA_STYLESHEET  = docs/doxygen-awesome/doxygen-awesome.css \
+                         docs/doxygen-awesome/doxygen-awesome-sidebar-only.css
+
+# --- Diagrams off for now (keeps the docs build dependency-free) --------
+HAVE_DOT               = NO

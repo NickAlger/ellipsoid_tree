@@ -2,15 +2,16 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// Simplicial mesh in R^d (cells are d-simplices): point location with
-// barycentric coordinates, closest point on/in the mesh, CG1 (piecewise
-// linear) finite element evaluation, and ellipsoid queries against the cells.
-//
-// The boundary is extracted as the faces belonging to exactly one cell.
-// Closest-point queries use a nearest-boundary-vertex kd-tree bound to
-// shortlist candidate boundary faces, then project onto each candidate with
-// closest_point_in_simplex — whose face enumeration replaces the explicit
-// subface bookkeeping (edges, corners, ...) of a hand-rolled projector.
+/// @file
+/// @brief Simplicial mesh in R^d (cells are d-simplices): point location with
+/// barycentric coordinates, closest point on/in the mesh, CG1 (piecewise
+/// linear) finite element evaluation, and ellipsoid queries against the cells.
+///
+/// The boundary is extracted as the faces belonging to exactly one cell.
+/// Closest-point queries use a nearest-boundary-vertex kd-tree bound to
+/// shortlist candidate boundary faces, then project onto each candidate with
+/// closest_point_in_simplex — whose face enumeration replaces the explicit
+/// subface bookkeeping (edges, corners, ...) of a hand-rolled projector.
 
 #include <algorithm>
 #include <cmath>
@@ -32,6 +33,7 @@
 
 namespace etree {
 
+/// Simplicial mesh in R^d (cells are d-simplices) with point location, closest-point, CG1 evaluation, and ellipsoid queries.
 class SimplexMesh
 {
 public:
@@ -129,9 +131,9 @@ public:
     //  Point location
     // ------------------------------------------------------------------
 
-    // For each query point (column): the index of a containing cell (-1 if
-    // outside the mesh) and its barycentric coordinates in that cell
-    // (columns of the second output; zero-filled for outside points).
+    /// For each query point (column): the index of a containing cell (-1 if
+    /// outside the mesh) and its barycentric coordinates in that cell
+    /// (columns of the second output; zero-filled for outside points).
     std::pair<Eigen::VectorXi, Eigen::MatrixXd>
     locate_points( const Eigen::Ref<const Eigen::MatrixXd>& points, int num_threads = 0 ) const
     {
@@ -218,12 +220,12 @@ public:
     //  CG1 (piecewise linear) finite element evaluation
     // ------------------------------------------------------------------
 
-    // functions_at_vertices: one function per row, shape (num_functions,
-    // num_vertices); points: shape (dim, num_points). Returns function values
-    // at the points, shape (num_functions, num_points). Points outside the
-    // mesh evaluate to zero, unless reflect_exterior is set, in which case
-    // they are first reflected across the boundary through their closest
-    // boundary point (points whose reflection is still outside give zero).
+    /// functions_at_vertices: one function per row, shape (num_functions,
+    /// num_vertices); points: shape (dim, num_points). Returns function values
+    /// at the points, shape (num_functions, num_points). Points outside the
+    /// mesh evaluate to zero, unless reflect_exterior is set, in which case
+    /// they are first reflected across the boundary through their closest
+    /// boundary point (points whose reflection is still outside give zero).
     Eigen::MatrixXd eval_cg1( const Eigen::Ref<const Eigen::MatrixXd>& functions_at_vertices,
                               const Eigen::Ref<const Eigen::MatrixXd>& points,
                               bool reflect_exterior = false,
@@ -272,16 +274,16 @@ public:
         return cell_tree_.collisions(E, tau);
     }
 
-    // All (cell, ellipsoid) collision pairs against an EllipsoidTree, via
-    // dual-tree traversal.
+    /// All (cell, ellipsoid) collision pairs against an EllipsoidTree, via
+    /// dual-tree traversal.
     std::vector<std::pair<int, int>> cell_ellipsoid_pairs( const EllipsoidTree& ellipsoids ) const
     {
         return collision_pairs(cell_tree_, ellipsoids);
     }
 
-    // All (cell of this mesh, cell of the other mesh) pairs whose closed
-    // cells intersect — the geometric kernel of supermeshing / conservative
-    // field transfer between non-matching meshes.
+    /// All (cell of this mesh, cell of the other mesh) pairs whose closed
+    /// cells intersect — the geometric kernel of supermeshing / conservative
+    /// field transfer between non-matching meshes.
     std::vector<std::pair<int, int>> cell_pairs( const SimplexMesh& other ) const
     {
         return collision_pairs(cell_tree_, other.cell_tree_);

@@ -2,10 +2,12 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// Axis-alternating geometric ordering of a point cloud (kd-tree ordering):
-// recursively sort by one coordinate axis, split at the median, and recurse
-// on each half with the next axis. Nearby points end up nearby in the
-// ordering, which improves cache behavior of downstream sweeps.
+/// @file
+/// @brief Axis-alternating geometric ordering of a point cloud (kd-tree ordering).
+///
+/// Recursively sort by one coordinate axis, split at the median, and recurse
+/// on each half with the next axis. Nearby points end up nearby in the
+/// ordering, which improves cache behavior of downstream sweeps.
 
 #include <algorithm>
 #include <numeric>
@@ -38,8 +40,8 @@ inline void geometric_sort_helper( int                                      star
 
 } // end namespace detail
 
-// Returns a permutation of {0, ..., N-1} placing the points (columns of the
-// input) in axis-alternating geometric order.
+/// Returns a permutation of {0, ..., N-1} placing the points (columns of the
+/// input) in axis-alternating geometric order.
 inline std::vector<int> geometric_sort( const Eigen::Ref<const Eigen::MatrixXd>& points )
 {
     std::vector<int> sort_inds(points.cols());

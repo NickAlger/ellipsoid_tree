@@ -2,16 +2,18 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// Greedy partition of a family of ellipsoids into batches of mutually
-// non-overlapping members. Motivating application: point-spread-function
-// probing, where impulse responses with non-overlapping supports can be
-// probed simultaneously, so fewer batches means fewer operator applications.
-//
-// The pairwise overlap graph is computed once by dual-tree self-collision;
-// batches are then greedy independent sets. Candidates are considered in
-// farthest-point order of their anchor points — ellipsoids whose anchors are
-// far from everything already picked come first — which spreads each batch
-// evenly through the domain.
+/// @file
+/// @brief Greedy partition of a family of ellipsoids into batches of mutually non-overlapping members.
+///
+/// Motivating application: point-spread-function probing, where impulse
+/// responses with non-overlapping supports can be probed simultaneously, so
+/// fewer batches means fewer operator applications.
+///
+/// The pairwise overlap graph is computed once by dual-tree self-collision;
+/// batches are then greedy independent sets. Candidates are considered in
+/// farthest-point order of their anchor points — ellipsoids whose anchors are
+/// far from everything already picked come first — which spreads each batch
+/// evenly through the domain.
 
 #include <algorithm>
 #include <numeric>
@@ -25,11 +27,11 @@
 
 namespace etree {
 
-// Partition the ellipsoids of `tree` (at the tree's tau) into batches of
-// mutually non-intersecting ellipsoids. anchor_points (one column per
-// ellipsoid) drive the farthest-point ordering. Every ellipsoid lands in
-// exactly one batch; if max_batches > 0, stop after that many batches (later
-// ellipsoids then remain unassigned).
+/// Partition the ellipsoids of `tree` (at the tree's tau) into batches of
+/// mutually non-intersecting ellipsoids. anchor_points (one column per
+/// ellipsoid) drive the farthest-point ordering. Every ellipsoid lands in
+/// exactly one batch; if max_batches > 0, stop after that many batches (later
+/// ellipsoids then remain unassigned).
 inline std::vector<std::vector<int>>
 pick_ellipsoid_batches( const EllipsoidTree&                     tree,
                         const Eigen::Ref<const Eigen::MatrixXd>& anchor_points,
@@ -113,7 +115,7 @@ pick_ellipsoid_batches( const EllipsoidTree&                     tree,
     return batches;
 }
 
-// Convenience: use the ellipsoid centers as anchors.
+/// Convenience: use the ellipsoid centers as anchors.
 inline std::vector<std::vector<int>>
 pick_ellipsoid_batches( const EllipsoidTree& tree, int max_batches = -1, int num_threads = 0 )
 {

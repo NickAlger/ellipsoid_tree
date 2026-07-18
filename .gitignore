@@ -80,5 +80,8 @@ dist/
 *.whl
 *.egg-info/
 
+# Documentation build output (Doxygen); the vendored theme in docs/doxygen-awesome/ is tracked
+docs/_build/
+
 # Maintainer-local scratch
 dev/

@@ -2,25 +2,28 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// The pairwise intersection table: intersects(A, B [, tau]) overloads for all
-// combinations of {point, Box, Ball, Ellipsoid, Simplex} plus the query-only
-// objects {Segment, Halfspace}, and the closest-point machinery behind the
-// solver-backed cells. Both argument orders are provided for every pair.
-//
-// Semantics (see geometry.hpp): all objects are solid and closed, so touching
-// counts as intersecting. Points are plain Eigen vectors. Every function
-// consuming an Ellipsoid takes the scale tau at call time; a pair of
-// ellipsoids shares a single common tau (for heterogeneous scales, fold the
-// scale into Sigma). Cells backed by iterative solvers (ellipsoid-ellipsoid,
-// ellipsoid-box) are exact up to solver tolerance: verdicts may go either way
-// for configurations within ~1e-8 of exact tangency.
-//
-// The ellipsoid-ellipsoid test follows:
-//   I. Gilitschenski and U. D. Hanebeck, "A Direct Method for Checking
-//   Overlap of Two Hyperellipsoids", Proc. 2014 Sensor Data Fusion: Trends,
-//   Solutions, Applications (SDF), 2014.
-// The simplex-simplex and box-simplex cells are decided by a small phase-I
-// LP (detail/linear_feasibility.hpp): do the two convex hulls share a point.
+/// @file
+/// @brief The pairwise intersection table: intersects(A, B [, tau]) overloads for all
+/// combinations of {point, Box, Ball, Ellipsoid, Simplex} plus the query-only
+/// objects {Segment, Halfspace}, and the closest-point machinery behind the
+/// solver-backed cells.
+///
+/// Both argument orders are provided for every pair.
+///
+/// Semantics (see geometry.hpp): all objects are solid and closed, so touching
+/// counts as intersecting. Points are plain Eigen vectors. Every function
+/// consuming an Ellipsoid takes the scale tau at call time; a pair of
+/// ellipsoids shares a single common tau (for heterogeneous scales, fold the
+/// scale into Sigma). Cells backed by iterative solvers (ellipsoid-ellipsoid,
+/// ellipsoid-box) are exact up to solver tolerance: verdicts may go either way
+/// for configurations within ~1e-8 of exact tangency.
+///
+/// The ellipsoid-ellipsoid test follows:
+///   I. Gilitschenski and U. D. Hanebeck, "A Direct Method for Checking
+///   Overlap of Two Hyperellipsoids", Proc. 2014 Sensor Data Fusion: Trends,
+///   Solutions, Applications (SDF), 2014.
+/// The simplex-simplex and box-simplex cells are decided by a small phase-I
+/// LP (detail/linear_feasibility.hpp): do the two convex hulls share a point.
 
 #include <cmath>
 #include <limits>
@@ -40,22 +43,23 @@ namespace etree {
 //  Closest-point machinery (the solver-backed narrow phase)
 // ------------------------------------------------------------------
 
+/// Result of a closest-point query: the closest point and its squared distance.
 struct ClosestPointResult
 {
-    Eigen::VectorXd point;
-    double          distance_squared;
+    Eigen::VectorXd point; ///< The closest point found.
+    double          distance_squared; ///< Squared distance from the query point to that closest point.
 };
 
-// Closest point to p in the solid simplex conv(V), in the metric
-// ||y||_M^2 = y^T M y with M symmetric positive definite.
-//
-// Exact up to roundoff: enumerates all faces (vertex subsets), M-projects p
-// onto each face's affine hull, and returns the best projection that lands
-// inside its face. The minimizer lies in the relative interior of some face,
-// where the projection onto that face's hull is both feasible and optimal, so
-// the scan always finds it; affinely-degenerate vertex configurations are
-// covered by their nondegenerate subsets. Cost is O(2^K) small solves for K
-// vertices — intended for K <= ~10.
+/// Closest point to p in the solid simplex conv(V), in the metric
+/// ||y||_M^2 = y^T M y with M symmetric positive definite.
+///
+/// Exact up to roundoff: enumerates all faces (vertex subsets), M-projects p
+/// onto each face's affine hull, and returns the best projection that lands
+/// inside its face. The minimizer lies in the relative interior of some face,
+/// where the projection onto that face's hull is both feasible and optimal, so
+/// the scan always finds it; affinely-degenerate vertex configurations are
+/// covered by their nondegenerate subsets. Cost is O(2^K) small solves for K
+/// vertices — intended for K <= ~10.
 inline ClosestPointResult
 closest_point_in_simplex( const Eigen::Ref<const Eigen::VectorXd>& p,
                           const Eigen::Ref<const Eigen::MatrixXd>& V,
@@ -153,7 +157,7 @@ closest_point_in_simplex( const Eigen::Ref<const Eigen::VectorXd>& p,
     return ClosestPointResult{point, y.dot(M * y)};
 }
 
-// Euclidean special case (M = I).
+/// Euclidean special case (M = I).
 inline ClosestPointResult
 closest_point_in_simplex( const Eigen::Ref<const Eigen::VectorXd>& p,
                           const Eigen::Ref<const Eigen::MatrixXd>& V )
@@ -161,17 +165,18 @@ closest_point_in_simplex( const Eigen::Ref<const Eigen::VectorXd>& p,
     return closest_point_in_simplex(p, V, Eigen::MatrixXd::Identity(V.rows(), V.rows()));
 }
 
+/// Options controlling the iterative (M-metric) closest_point_in_box solve.
 struct BoxClosestPointOptions
 {
-    double tol        = 1.0e-12; // convergence: max coordinate step, relative to box size
-    int    max_sweeps = 256;
+    double tol        = 1.0e-12; ///< convergence: max coordinate step, relative to box size
+    int    max_sweeps = 256; ///< Maximum number of coordinate-descent sweeps.
     double stop_below = -std::numeric_limits<double>::infinity();
-    // Early exit: return once distance_squared <= stop_below. The reported
-    // distance is always an achieved (upper-bound) value, so early "close
-    // enough" verdicts are certificates.
+    ///< Early exit: return once distance_squared <= stop_below. The reported
+    ///< distance is always an achieved (upper-bound) value, so early "close
+    ///< enough" verdicts are certificates.
 };
 
-// Closest point to p in the box, Euclidean metric: clamping, exact.
+/// Closest point to p in the box, Euclidean metric: clamping, exact.
 inline ClosestPointResult
 closest_point_in_box( const Eigen::Ref<const Eigen::VectorXd>& p, const Box& B )
 {
@@ -179,11 +184,11 @@ closest_point_in_box( const Eigen::Ref<const Eigen::VectorXd>& p, const Box& B )
     return ClosestPointResult{x, (x - p).squaredNorm()};
 }
 
-// Closest point to p in the box, in the metric ||y||_M^2 = y^T M y with M
-// symmetric positive definite. Projected cyclic coordinate descent, which
-// converges to the unique minimizer for box constraints; the returned
-// distance_squared is an achieved value (an upper bound on the true minimum
-// that converges to it).
+/// Closest point to p in the box, in the metric ||y||_M^2 = y^T M y with M
+/// symmetric positive definite. Projected cyclic coordinate descent, which
+/// converges to the unique minimizer for box constraints; the returned
+/// distance_squared is an achieved value (an upper bound on the true minimum
+/// that converges to it).
 inline ClosestPointResult
 closest_point_in_box( const Eigen::Ref<const Eigen::VectorXd>& p,
                       const Box&                               B,
@@ -452,10 +457,10 @@ inline bool intersects( const Segment& S, const Ellipsoid& E, double tau )
 //  Simplex membership cells
 // ------------------------------------------------------------------
 
-// Point in simplex. For a full-dimensional simplex (dim+1 vertices) this is
-// the exact barycentric test; a degenerate (zero-volume) full-dimensional
-// simplex yields false. For a lower-dimensional simplex, membership is a
-// measure-zero question and is decided within a small relative tolerance.
+/// Point in simplex. For a full-dimensional simplex (dim+1 vertices) this is
+/// the exact barycentric test; a degenerate (zero-volume) full-dimensional
+/// simplex yields false. For a lower-dimensional simplex, membership is a
+/// measure-zero question and is decided within a small relative tolerance.
 inline bool intersects( const Eigen::Ref<const Eigen::VectorXd>& p, const Simplex& S )
 {
     const int dim = S.V.rows();
@@ -517,11 +522,11 @@ inline bool intersects( const Segment& seg, const Simplex& S )
 //  LP-backed cells: convex hull vs convex hull
 // ------------------------------------------------------------------
 
-// Simplices A and B intersect iff some point is a convex combination of both
-// vertex sets: exists alpha, beta >= 0 with sum(alpha) = sum(beta) = 1 and
-// V_A alpha = V_B beta — a linear feasibility problem. Works for any vertex
-// counts (arbitrary convex hulls of point sets), including lower-dimensional
-// simplices, with the LP's epsilon-tolerance semantics.
+/// Simplices A and B intersect iff some point is a convex combination of both
+/// vertex sets: exists alpha, beta >= 0 with sum(alpha) = sum(beta) = 1 and
+/// V_A alpha = V_B beta — a linear feasibility problem. Works for any vertex
+/// counts (arbitrary convex hulls of point sets), including lower-dimensional
+/// simplices, with the LP's epsilon-tolerance semantics.
 inline bool intersects( const Simplex& A, const Simplex& B )
 {
     if ( !intersects(bounding_box(A), bounding_box(B)) )
@@ -543,9 +548,9 @@ inline bool intersects( const Simplex& A, const Simplex& B )
     return detail::linear_feasibility(M, rhs);
 }
 
-// Box and simplex intersect iff exists alpha >= 0, sum(alpha) = 1, with
-// lo <= V alpha <= hi; the two-sided bound becomes equalities with slack
-// variables s, t >= 0: V alpha - s = lo, s + t = hi - lo.
+/// Box and simplex intersect iff exists alpha >= 0, sum(alpha) = 1, with
+/// lo <= V alpha <= hi; the two-sided bound becomes equalities with slack
+/// variables s, t >= 0: V alpha - s = lo, s + t = hi - lo.
 inline bool intersects( const Box& A, const Simplex& S )
 {
     if ( !intersects(A, bounding_box(S)) )
@@ -573,13 +578,13 @@ inline bool intersects( const Box& A, const Simplex& S )
 //  Ellipsoid solver-backed cells
 // ------------------------------------------------------------------
 
-// Exact ellipsoid-ellipsoid overlap (Gilitschenski & Hanebeck 2014): with the
-// generalized eigendecomposition Sigma_A Phi = Sigma_B Phi Lambda,
-// Phi^T Sigma_B Phi = I, and v = Phi^T (mu_A - mu_B), the ellipsoids overlap
-// iff min over s in [0,1] of
-//   K(s) = 1 - s(1-s)/tau^2 * sum_i v_i^2 / (1 + s (lambda_i - 1))
-// is nonnegative. Any s with K(s) < 0 certifies separation, so the
-// minimization exits early on that evidence.
+/// Exact ellipsoid-ellipsoid overlap (Gilitschenski & Hanebeck 2014): with the
+/// generalized eigendecomposition Sigma_A Phi = Sigma_B Phi Lambda,
+/// Phi^T Sigma_B Phi = I, and v = Phi^T (mu_A - mu_B), the ellipsoids overlap
+/// iff min over s in [0,1] of
+///   K(s) = 1 - s(1-s)/tau^2 * sum_i v_i^2 / (1 + s (lambda_i - 1))
+/// is nonnegative. Any s with K(s) < 0 certifies separation, so the
+/// minimization exits early on that evidence.
 inline bool intersects( const Ellipsoid& A, const Ellipsoid& B, double tau )
 {
     if ( !intersects(bounding_box(A, tau), bounding_box(B, tau)) )

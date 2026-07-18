@@ -2,27 +2,29 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// Concrete spatial indexes over the geometric types: BoxTree, BallTree,
-// EllipsoidTree, SimplexTree. Each is a thin façade over one shared pattern:
-// contiguous element storage + an AABBTree over the elements' bounding boxes
-// + broad-phase traversal + narrow-phase tests from the intersection table.
-//
-// collisions(query [, tau]) returns the indices of elements intersecting the
-// query (order unspecified). collisions_batch(...) runs many queries with
-// parallel_for. collision_pairs(treeA, treeB) and self_collision_pairs() use
-// dual-tree traversal.
-//
-// Per-element data that the free predicates would recompute per call is
-// hoisted at build time: EllipsoidTree stores each Sigma^{-1}, SimplexTree
-// stores each affine-coordinate transform. Ellipsoid queries use tiered
-// pruning: a cheap bounding-box test at every node, then (by default) the
-// exact ellipsoid-box QP on survivors — toggle with exact_ellipsoid_pruning.
-//
-// tau semantics: EllipsoidTree fixes tau for its elements at construction
-// (leaf boxes depend on it). Queries default to that tau; passing a smaller
-// tau is allowed (pruning stays conservative), a larger one throws — call
-// rebuild(new_tau) instead. Trees of non-ellipsoid elements take tau
-// explicitly on ellipsoid queries.
+/// @file
+/// @brief Concrete spatial indexes over the geometric types: BoxTree, BallTree, EllipsoidTree, SimplexTree.
+///
+/// Each is a thin façade over one shared pattern: contiguous element storage
+/// + an AABBTree over the elements' bounding boxes + broad-phase traversal +
+/// narrow-phase tests from the intersection table.
+///
+/// collisions(query [, tau]) returns the indices of elements intersecting the
+/// query (order unspecified). collisions_batch(...) runs many queries with
+/// parallel_for. collision_pairs(treeA, treeB) and self_collision_pairs() use
+/// dual-tree traversal.
+///
+/// Per-element data that the free predicates would recompute per call is
+/// hoisted at build time: EllipsoidTree stores each Sigma^{-1}, SimplexTree
+/// stores each affine-coordinate transform. Ellipsoid queries use tiered
+/// pruning: a cheap bounding-box test at every node, then (by default) the
+/// exact ellipsoid-box QP on survivors — toggle with exact_ellipsoid_pruning.
+///
+/// tau semantics: EllipsoidTree fixes tau for its elements at construction
+/// (leaf boxes depend on it). Queries default to that tau; passing a smaller
+/// tau is allowed (pruning stays conservative), a larger one throws — call
+/// rebuild(new_tau) instead. Trees of non-ellipsoid elements take tau
+/// explicitly on ellipsoid queries.
 
 #include <cstddef>
 #include <stdexcept>
@@ -214,10 +216,11 @@ inline std::vector<std::pair<int, int>> collect_self_pairs( const AABBTree& T, N
 //  BoxTree
 // ------------------------------------------------------------------
 
+/// Spatial index over a collection of axis-aligned boxes.
 class BoxTree : public detail::TreeBatchQueries<BoxTree>
 {
 public:
-    bool exact_ellipsoid_pruning = true;
+    bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
     BoxTree() = default;
 
@@ -313,10 +316,11 @@ private:
 //  BallTree
 // ------------------------------------------------------------------
 
+/// Spatial index over a collection of balls.
 class BallTree : public detail::TreeBatchQueries<BallTree>
 {
 public:
-    bool exact_ellipsoid_pruning = true;
+    bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
     BallTree() = default;
 
@@ -340,7 +344,7 @@ public:
         aabb_.build(lo, hi);
     }
 
-    // Points with radii; zero radii give a point tree usable for region queries.
+    /// Points with radii; zero radii give a point tree usable for region queries.
     BallTree( const Eigen::Ref<const Eigen::MatrixXd>& centers,
               const Eigen::Ref<const Eigen::VectorXd>& radii )
         : BallTree([&]
@@ -418,10 +422,11 @@ private:
 //  EllipsoidTree
 // ------------------------------------------------------------------
 
+/// Spatial index over a collection of ellipsoids sharing a fixed scale tau.
 class EllipsoidTree : public detail::TreeBatchQueries<EllipsoidTree>
 {
 public:
-    bool exact_ellipsoid_pruning = true;
+    bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
     EllipsoidTree() = default;
 
@@ -461,7 +466,7 @@ public:
     const AABBTree& tree() const                     { return aabb_; }
     const Eigen::MatrixXd& sigma_inverse( int ii ) const { return sigma_inv_[ii]; }
 
-    // Rebuild the leaf boxes (and tree) at a new scale; Sigma^{-1} is unchanged.
+    /// Rebuild the leaf boxes (and tree) at a new scale; Sigma^{-1} is unchanged.
     void rebuild( double new_tau )
     {
         if ( !(new_tau > 0.0) )
@@ -595,10 +600,11 @@ private:
 //  SimplexTree
 // ------------------------------------------------------------------
 
+/// Spatial index over a collection of simplices (e.g. a mesh).
 class SimplexTree : public detail::TreeBatchQueries<SimplexTree>
 {
 public:
-    bool exact_ellipsoid_pruning = true;
+    bool exact_ellipsoid_pruning = true; ///< Enable the exact ellipsoid-box test during node pruning (vs. bounding-box only).
 
     SimplexTree() = default;
 
@@ -633,8 +639,8 @@ public:
         aabb_.build(lo, hi);
     }
 
-    // Mesh convenience: vertices (dim x num_vertices), cells (K x num_cells)
-    // of vertex indices; one simplex per cell column.
+    /// Mesh convenience: vertices (dim x num_vertices), cells (K x num_cells)
+    /// of vertex indices; one simplex per cell column.
     SimplexTree( const Eigen::Ref<const Eigen::MatrixXd>& vertices,
                  const Eigen::Ref<const Eigen::MatrixXi>& cells,
                  int num_threads = 0 )
@@ -666,7 +672,7 @@ public:
     const std::vector<Simplex>& objects() const    { return objects_; }
     const AABBTree& tree() const                   { return aabb_; }
 
-    // Affine (barycentric) coordinates of p with respect to element ii.
+    /// Affine (barycentric) coordinates of p with respect to element ii.
     Eigen::VectorXd affine_coordinates( int ii, const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         return transform_A_[ii] * p + transform_b_[ii];
@@ -678,7 +684,7 @@ public:
             [&]( int e ) { return point_in_element(e, p); });
     }
 
-    // Index of one element containing p, or -1 (early-exit traversal).
+    /// Index of one element containing p, or -1 (early-exit traversal).
     int first_collision( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         int found = -1;
@@ -768,7 +774,7 @@ private:
 //  Tree-vs-tree collision pairs (dual traversal + narrow phase)
 // ------------------------------------------------------------------
 
-// Each tree's tau is folded into the covariances so differing scales are handled exactly.
+/// Each tree's tau is folded into the covariances so differing scales are handled exactly.
 inline std::vector<std::pair<int, int>> collision_pairs( const EllipsoidTree& A, const EllipsoidTree& B )
 {
     const double sa = A.tau() * A.tau();

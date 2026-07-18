@@ -2,21 +2,24 @@
 // SPDX-License-Identifier: MIT
 // Part of etree — https://github.com/NickAlger/ellipsoid_tree
 
-// AABB tree over a set of leaf boxes, stored in an implicit complete-binary-
-// heap layout: node b has children 2b+1 and 2b+2, and a tree with n leaves
-// has exactly 2n-1 nodes. The build splits each node's leaf range so that
-// every level is full except the last, which is filled left to right — this
-// is what makes the heap indexing valid.
-//
-// Traversal is visitor-based: visit() takes a node predicate ("does the query
-// overlap this node box?") and a leaf callback (return false to stop early).
-// Concrete query types are two-line predicates on top of it; the convenience
-// point/box/ball queries below are exactly that. visit_pairs() and
-// visit_self_pairs() implement dual-tree simultaneous descent for
-// tree-vs-tree collision queries.
-//
-// Node boxes and structure are publicly inspectable (node_lo/node_hi/...),
-// both for the dual traversal and for visualization tooling.
+/// @file
+/// @brief AABB tree over leaf boxes, with visitor-based traversal and dual-tree collision queries.
+///
+/// AABB tree over a set of leaf boxes, stored in an implicit complete-binary-
+/// heap layout: node b has children 2b+1 and 2b+2, and a tree with n leaves
+/// has exactly 2n-1 nodes. The build splits each node's leaf range so that
+/// every level is full except the last, which is filled left to right — this
+/// is what makes the heap indexing valid.
+///
+/// Traversal is visitor-based: visit() takes a node predicate ("does the query
+/// overlap this node box?") and a leaf callback (return false to stop early).
+/// Concrete query types are two-line predicates on top of it; the convenience
+/// point/box/ball queries below are exactly that. visit_pairs() and
+/// visit_self_pairs() implement dual-tree simultaneous descent for
+/// tree-vs-tree collision queries.
+///
+/// Node boxes and structure are publicly inspectable (node_lo/node_hi/...),
+/// both for the dual traversal and for visualization tooling.
 
 #include <algorithm>
 #include <stdexcept>
@@ -54,17 +57,21 @@ inline int heap_left_size( int n )
 
 } // end namespace detail
 
+/// Axis-aligned bounding box (AABB) tree over a set of leaf boxes.
 class AABBTree
 {
 public:
+    /// Constructs an empty tree.
     AABBTree() = default;
 
+    /// Builds a tree over the leaf boxes given as columns of leaf_lo and leaf_hi.
     AABBTree( const Eigen::Ref<const Eigen::MatrixXd>& leaf_lo,
               const Eigen::Ref<const Eigen::MatrixXd>& leaf_hi )
     {
         build(leaf_lo, leaf_hi);
     }
 
+    /// (Re)builds the tree over the leaf boxes given as columns of leaf_lo and leaf_hi.
     void build( const Eigen::Ref<const Eigen::MatrixXd>& leaf_lo,
                 const Eigen::Ref<const Eigen::MatrixXd>& leaf_hi )
     {
@@ -136,25 +143,37 @@ public:
         }
     }
 
+    /// Spatial dimension of the leaf boxes.
     int  dim() const        { return dim_; }
+    /// Number of leaf boxes (external objects) in the tree.
     int  num_leaves() const { return num_leaves_; }
+    /// Total number of nodes (2 * num_leaves - 1, or 0 when empty).
     int  num_nodes() const  { return num_nodes_; }
+    /// True when the tree contains no nodes.
     bool empty() const      { return num_nodes_ == 0; }
 
+    /// True when node is a leaf (has no children in the heap layout).
     bool is_leaf( int node ) const          { return 2 * node + 1 >= num_nodes_; }
+    /// Heap index of node's left child.
     int  left_child( int node ) const       { return 2 * node + 1; }
+    /// Heap index of node's right child.
     int  right_child( int node ) const      { return 2 * node + 2; }
+    /// External object index stored at a leaf node (-1 for internal nodes).
     int  external_index( int node ) const   { return i2e_(node); } // -1 for internal nodes
 
+    /// Lower corner of node's bounding box.
     Eigen::Ref<const Eigen::VectorXd> node_lo( int node ) const { return lo_.col(node); }
+    /// Upper corner of node's bounding box.
     Eigen::Ref<const Eigen::VectorXd> node_hi( int node ) const { return hi_.col(node); }
+    /// All node lower corners as a (dim, num_nodes) matrix.
     const Eigen::MatrixXd& node_lo_matrix() const { return lo_; }
+    /// All node upper corners as a (dim, num_nodes) matrix.
     const Eigen::MatrixXd& node_hi_matrix() const { return hi_; }
 
-    // Depth-first traversal. overlaps_node(lo, hi) decides whether to descend
-    // into a node; on_leaf(external_index) is called for each overlapping
-    // leaf and stops the whole traversal by returning false. Returns false
-    // iff the traversal was stopped early.
+    /// Depth-first traversal. overlaps_node(lo, hi) decides whether to descend
+    /// into a node; on_leaf(external_index) is called for each overlapping
+    /// leaf and stops the whole traversal by returning false. Returns false
+    /// iff the traversal was stopped early.
     template <class NodePredicate, class LeafCallback>
     bool visit( NodePredicate&& overlaps_node, LeafCallback&& on_leaf ) const
     {
@@ -189,7 +208,9 @@ public:
         return true;
     }
 
-    // Convenience queries (exact for the leaf boxes themselves).
+    /// External indices of all leaf boxes that contain the query point p.
+    ///
+    /// Convenience query; exact for the leaf boxes themselves.
     std::vector<int> point_collisions( const Eigen::Ref<const Eigen::VectorXd>& p ) const
     {
         std::vector<int> out;
@@ -199,6 +220,7 @@ public:
         return out;
     }
 
+    /// External indices of all leaf boxes that overlap the query box [qlo, qhi].
     std::vector<int> box_collisions( const Eigen::Ref<const Eigen::VectorXd>& qlo,
                                      const Eigen::Ref<const Eigen::VectorXd>& qhi ) const
     {
@@ -209,6 +231,7 @@ public:
         return out;
     }
 
+    /// External indices of all leaf boxes that intersect the ball of given center and radius.
     std::vector<int> ball_collisions( const Eigen::Ref<const Eigen::VectorXd>& center,
                                       double radius ) const
     {
@@ -232,10 +255,10 @@ private:
 };
 
 
-// Dual-tree simultaneous descent over two trees: overlaps_pair(loA, hiA, loB,
-// hiB) prunes node pairs; on_leaf_pair(ext_a, ext_b) is called for surviving
-// leaf pairs and stops everything by returning false. A far-apart pair of
-// clusters costs a single box test instead of one traversal per element.
+/// Dual-tree simultaneous descent over two trees: overlaps_pair(loA, hiA, loB,
+/// hiB) prunes node pairs; on_leaf_pair(ext_a, ext_b) is called for surviving
+/// leaf pairs and stops everything by returning false. A far-apart pair of
+/// clusters costs a single box test instead of one traversal per element.
 template <class PairPredicate, class LeafPairCallback>
 bool visit_pairs( const AABBTree& A, const AABBTree& B,
                   PairPredicate&& overlaps_pair, LeafPairCallback&& on_leaf_pair )
@@ -286,9 +309,9 @@ bool visit_pairs( const AABBTree& A, const AABBTree& B,
     return true;
 }
 
-// Self-collision variant: visits each unordered pair of distinct leaves at
-// most once. Expanding a diagonal pair (n, n) into (L,L), (R,R), (L,R) — and
-// never (R,L) — is what guarantees the once-only property.
+/// Self-collision variant: visits each unordered pair of distinct leaves at
+/// most once. Expanding a diagonal pair (n, n) into (L,L), (R,R), (L,R) — and
+/// never (R,L) — is what guarantees the once-only property.
 template <class PairPredicate, class LeafPairCallback>
 bool visit_self_pairs( const AABBTree& T,
                        PairPredicate&& overlaps_pair, LeafPairCallback&& on_leaf_pair )
