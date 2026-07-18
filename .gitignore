@@ -79,3 +79,6 @@ __pycache__/
 dist/
 *.whl
 *.egg-info/
+
+# Maintainer-local scratch
+dev/
