@@ -114,7 +114,7 @@ auto batches = pick_ellipsoid_batches(tree);
 Eigen is found via `find_package(Eigen3)`, with an automatic pinned download
 as fallback when building this repo standalone.
 
-**Python** — `pip install .` (or `pip install git+https://github.com/NickAlger/ellipsoid_tree`)
+**Python** — `pip install ellipsoid-tree` (or `pip install git+https://github.com/NickAlger/ellipsoid_tree`)
 builds the `etree` module via scikit-build-core; points are rows (`(n, d)`
 arrays, scipy-style), and figures render inline in Jupyter. Alternatively,
 build the module without pip via
