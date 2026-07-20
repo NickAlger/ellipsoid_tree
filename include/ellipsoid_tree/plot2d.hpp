@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief Build a 2D figure from the library's geometric objects and trees and write it as SVG or PNG.
@@ -8,7 +8,7 @@
 /// Optional 2D visualization: build a figure from the library's geometric
 /// objects and trees, then write it as an SVG (vector; ellipses keep their
 /// true center/axes/rotation as readable XML). This header is deliberately
-/// NOT included by the etree.hpp umbrella — include it only if you want it.
+/// NOT included by the ellipsoid_tree.hpp umbrella — include it only if you want it.
 /// It has no dependencies beyond the library itself.
 ///
 ///   Plot2D fig;
@@ -35,13 +35,13 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 
-#include "etree/geometry.hpp"
-#include "etree/object_tree.hpp"
-#include "etree/kd_tree.hpp"
-#include "etree/simplex_mesh.hpp"
-#include "etree/detail/raster2d.hpp"
+#include "ellipsoid_tree/geometry.hpp"
+#include "ellipsoid_tree/object_tree.hpp"
+#include "ellipsoid_tree/kd_tree.hpp"
+#include "ellipsoid_tree/simplex_mesh.hpp"
+#include "ellipsoid_tree/detail/raster2d.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 // ------------------------------------------------------------------
 //  Colors and styles
@@ -322,7 +322,7 @@ public:
         std::ofstream out(path);
         if ( !out )
         {
-            throw std::runtime_error("etree::Plot2D::save_svg: cannot open " + path);
+            throw std::runtime_error("ellipsoid_tree::Plot2D::save_svg: cannot open " + path);
         }
         out << to_svg(width_px);
     }
@@ -389,7 +389,7 @@ public:
         const RenderedImage im = render_rgb(width_px);
         if ( !stbi_write_png(path.c_str(), im.width, im.height, 3, im.rgb.data(), 3 * im.width) )
         {
-            throw std::runtime_error("etree::Plot2D::save_png: cannot write " + path);
+            throw std::runtime_error("ellipsoid_tree::Plot2D::save_png: cannot write " + path);
         }
     }
 
@@ -429,7 +429,7 @@ private:
     {
         if ( d != 2 )
         {
-            throw std::invalid_argument(std::string("etree::Plot2D: ") + what
+            throw std::invalid_argument(std::string("ellipsoid_tree::Plot2D: ") + what
                                         + " must be 2D to be drawn");
         }
     }
@@ -1154,7 +1154,7 @@ inline void draw_tree_impl( Plot2D& fig, const AABBTree& tree, int num_objects,
 {
     if ( !tree.empty() && tree.dim() != 2 )
     {
-        throw std::invalid_argument("etree::draw_tree: tree must be 2D");
+        throw std::invalid_argument("ellipsoid_tree::draw_tree: tree must be 2D");
     }
     for ( int b = 0; b < tree.num_nodes(); ++b )
     {
@@ -1277,7 +1277,7 @@ inline void draw_kdtree( Plot2D& fig, const KDTree& T, DrawKDTreeOptions opts = 
     }
     if ( T.dim() != 2 )
     {
-        throw std::invalid_argument("etree::draw_kdtree: tree must be 2D");
+        throw std::invalid_argument("ellipsoid_tree::draw_kdtree: tree must be 2D");
     }
     const Eigen::MatrixXd& pts = T.ordered_points();
     Eigen::Vector2d lo = pts.rowwise().minCoeff();
@@ -1359,11 +1359,11 @@ inline void draw_cg1_field( Plot2D& fig, const SimplexMesh& mesh,
 {
     if ( mesh.dim() != 2 )
     {
-        throw std::invalid_argument("etree::draw_cg1_field: mesh must be 2D");
+        throw std::invalid_argument("ellipsoid_tree::draw_cg1_field: mesh must be 2D");
     }
     if ( vertex_values.size() != mesh.num_vertices() )
     {
-        throw std::invalid_argument("etree::draw_cg1_field: one value per vertex required");
+        throw std::invalid_argument("ellipsoid_tree::draw_cg1_field: one value per vertex required");
     }
     double vmin = std::isnan(opts.vmin) ? vertex_values.minCoeff() : opts.vmin;
     double vmax = std::isnan(opts.vmax) ? vertex_values.maxCoeff() : opts.vmax;
@@ -1390,4 +1390,4 @@ inline void draw_cg1_field( Plot2D& fig, const SimplexMesh& mesh,
     }
 }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

@@ -4,9 +4,9 @@ requires = ["scikit-build-core>=0.10", "pybind11>=2.12"]
 build-backend = "scikit_build_core.build"
 
 [project]
-# Distribution (PyPI) name — matches the repo. The import name stays `etree`.
+# Distribution (PyPI) name — matches the repo. The import name is `ellipsoid_tree`.
 name = "ellipsoid-tree"
-version = "0.1.0"
+version = "0.2.0"
 description = "Exact ellipsoid intersection tests and spatial trees (header-only C++ core with Python bindings)"
 readme = "README.md"
 license = { file = "LICENSE" }
@@ -35,9 +35,9 @@ Repository = "https://github.com/NickAlger/ellipsoid_tree"
 cmake.version = ">=3.16"
 
 [tool.scikit-build.cmake.define]
-ETREE_BUILD_PYTHON = "ON"
-ETREE_BUILD_TESTS = "OFF"
-ETREE_BUILD_EXAMPLES = "OFF"
+ELLIPSOID_TREE_BUILD_PYTHON = "ON"
+ELLIPSOID_TREE_BUILD_TESTS = "OFF"
+ELLIPSOID_TREE_BUILD_EXAMPLES = "OFF"
 
 [tool.cibuildwheel]
 # CPython 3.9-3.13. Skip musllinux (Alpine), 32-bit, and PyPy for v0.1.

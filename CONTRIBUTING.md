@@ -1,4 +1,4 @@
-# Contributing to etree
+# Contributing to ellipsoid_tree
 
 Thanks for your interest! Bug reports, fixes, and focused improvements are
 welcome. This is a header-only C++17 library (Eigen is the only dependency) with
@@ -28,8 +28,8 @@ ctest --test-dir build-asan --output-on-failure
 ### Python bindings
 
 ```sh
-cmake -S . -B build -DETREE_BUILD_PYTHON=ON
-cmake --build build --target etree_python
+cmake -S . -B build -DELLIPSOID_TREE_BUILD_PYTHON=ON
+cmake --build build --target ellipsoid_tree_python
 PYTHONPATH=build/bindings python3 -m pytest bindings/tests
 ```
 
@@ -54,6 +54,6 @@ Points are rows at the Python boundary (`(n, d)` arrays, scipy-style).
 
 ## Versioning
 
-The version is single-sourced in `include/etree/etree.hpp` (the
-`ETREE_VERSION_*` macros). `CMakeLists.txt` parses it and a CI check keeps
+The version is single-sourced in `include/ellipsoid_tree/ellipsoid_tree.hpp` (the
+`ELLIPSOID_TREE_VERSION_*` macros). `CMakeLists.txt` parses it and a CI check keeps
 `pyproject.toml` and `CITATION.cff` in sync — bump all three together.

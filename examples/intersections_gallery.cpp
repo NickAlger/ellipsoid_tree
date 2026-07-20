@@ -1,6 +1,6 @@
 // Pairwise intersection tests, visually
 //
-// Every cell of etree's pairwise `intersects` table, shown rather than told:
+// Every cell of ellipsoid_tree's pairwise `intersects` table, shown rather than told:
 // for each pair of object types there is one clearly intersecting and one
 // clearly disjoint configuration. The first object of each pair is drawn in
 // blue, the second in vermillion; halfspaces shade their feasible side. The
@@ -16,10 +16,10 @@
 #include <cstdio>
 #include <string>
 
-#include "etree/etree.hpp"
-#include "etree/plot2d.hpp"
+#include "ellipsoid_tree/ellipsoid_tree.hpp"
+#include "ellipsoid_tree/plot2d.hpp"
 
-using namespace etree;
+using namespace ellipsoid_tree;
 
 namespace {
 

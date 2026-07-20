@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 //
 // Python bindings. Array-layout convention at the Python boundary: POINTS ARE
 // ROWS, matching numpy/scipy practice — point sets are (n, d), simplex
 // vertices are (K, d), mesh cells are (num_cells, d+1), k-NN results are
-// (num_queries, k). Internally etree stores points as columns; the transpose
+// (num_queries, k). Internally ellipsoid_tree stores points as columns; the transpose
 // happens here, once, at the boundary.
 
 #include <cstring>
@@ -13,12 +13,12 @@
 #include <pybind11/eigen.h>
 #include <pybind11/stl.h>
 
-#include "etree/etree.hpp"
-#include "etree/plot2d.hpp"
+#include "ellipsoid_tree/ellipsoid_tree.hpp"
+#include "ellipsoid_tree/plot2d.hpp"
 
 namespace py = pybind11;
 using namespace pybind11::literals;
-using namespace etree;
+using namespace ellipsoid_tree;
 
 namespace {
 
@@ -76,15 +76,15 @@ void def_common_tree( py::class_<Tree>& cls )
 
 } // end anonymous namespace
 
-PYBIND11_MODULE(etree, m)
+PYBIND11_MODULE(ellipsoid_tree, m)
 {
-    m.doc() = "etree: exact ellipsoid intersection tests and spatial trees.\n\n"
+    m.doc() = "ellipsoid_tree: exact ellipsoid intersection tests and spatial trees.\n\n"
               "Array convention: points are rows — point sets are (n, d), simplex\n"
               "vertices (K, d), mesh cells (num_cells, d+1). Ellipsoids are\n"
               "E(tau) = {x : (x - mu)^T Sigma^{-1} (x - mu) <= tau^2}; tau defaults to 1.";
-    m.attr("__version__") = py::str(std::to_string(ETREE_VERSION_MAJOR) + "."
-                                    + std::to_string(ETREE_VERSION_MINOR) + "."
-                                    + std::to_string(ETREE_VERSION_PATCH));
+    m.attr("__version__") = py::str(std::to_string(ELLIPSOID_TREE_VERSION_MAJOR) + "."
+                                    + std::to_string(ELLIPSOID_TREE_VERSION_MINOR) + "."
+                                    + std::to_string(ELLIPSOID_TREE_VERSION_PATCH));
 
     // ------------------------------------------------------------------
     //  Geometry types

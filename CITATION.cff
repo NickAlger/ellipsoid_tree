@@ -1,6 +1,6 @@
 cff-version: 1.2.0
 message: "If you use this software, please cite it as below."
-title: "etree: exact ellipsoid intersection tests and spatial trees"
+title: "ellipsoid_tree: exact ellipsoid intersection tests and spatial trees"
 abstract: >-
   A header-only C++17 library (with Python bindings) for exact intersection
   tests over points, boxes, balls, ellipsoids, and simplices in n dimensions,
@@ -10,7 +10,7 @@ authors:
   - family-names: Alger
     given-names: Nick
     email: nalger225@gmail.com
-version: 0.1.0
+version: 0.2.0
 date-released: "2026-07-18"
 license: MIT
 repository-code: "https://github.com/NickAlger/ellipsoid_tree"

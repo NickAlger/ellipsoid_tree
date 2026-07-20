@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/geometry.hpp"
+#include "ellipsoid_tree/geometry.hpp"
 #include "test_helpers.hpp"
 
 #include <random>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 TEST_CASE("bounding_box of point, ball, segment, simplex")

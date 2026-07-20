@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/aabb_tree.hpp"
-#include "etree/geometric_sort.hpp"
+#include "ellipsoid_tree/aabb_tree.hpp"
+#include "ellipsoid_tree/geometric_sort.hpp"
 #include "test_helpers.hpp"
 
 #include <algorithm>
 #include <random>
 #include <set>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 namespace {

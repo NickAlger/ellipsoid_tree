@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 // Software rasterization support for Plot2D's PNG backend: an RGB canvas
 // with alpha blending, signed-distance-function coverage for the primitive
@@ -20,12 +20,12 @@
 #pragma GCC diagnostic ignored "-Wmissing-field-initializers"
 #pragma GCC diagnostic ignored "-Wunused-function"
 #endif
-#include "etree/thirdparty/stb/stb_image_write.h"
+#include "ellipsoid_tree/thirdparty/stb/stb_image_write.h"
 #if defined(__GNUC__) || defined(__clang__)
 #pragma GCC diagnostic pop
 #endif
 
-namespace etree {
+namespace ellipsoid_tree {
 
 struct Color; // defined in plot2d.hpp
 
@@ -189,4 +189,4 @@ inline void viridis_rgb( double t, double& r, double& g, double& b )
 }
 
 } // end namespace detail
-} // end namespace etree
+} // end namespace ellipsoid_tree

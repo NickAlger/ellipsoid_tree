@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief The basic geometric object types.
@@ -13,7 +13,7 @@
 
 #include <Eigen/Dense>
 
-namespace etree {
+namespace ellipsoid_tree {
 
 /// Axis-aligned box {x : lo <= x <= hi componentwise}.
 struct Box
@@ -127,7 +127,7 @@ simplex_transform( const Eigen::Ref<const Eigen::MatrixXd>& V )
     const int K   = V.cols();
     if ( K < 1 )
     {
-        throw std::invalid_argument("etree::simplex_transform: simplex has no vertices");
+        throw std::invalid_argument("ellipsoid_tree::simplex_transform: simplex has no vertices");
     }
 
     Eigen::MatrixXd A(K, dim);
@@ -158,4 +158,4 @@ simplex_transform( const Eigen::Ref<const Eigen::MatrixXd>& V )
     return std::make_pair(A, b);
 }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

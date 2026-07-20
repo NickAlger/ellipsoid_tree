@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief Axis-alternating geometric ordering of a point cloud (kd-tree ordering).
@@ -15,7 +15,7 @@
 
 #include <Eigen/Dense>
 
-namespace etree {
+namespace ellipsoid_tree {
 
 namespace detail {
 
@@ -50,4 +50,4 @@ inline std::vector<int> geometric_sort( const Eigen::Ref<const Eigen::MatrixXd>&
     return sort_inds;
 }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

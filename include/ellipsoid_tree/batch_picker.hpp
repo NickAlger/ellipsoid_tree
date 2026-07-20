@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief Greedy partition of a family of ellipsoids into batches of mutually non-overlapping members.
@@ -22,10 +22,10 @@
 
 #include <Eigen/Dense>
 
-#include "etree/object_tree.hpp"
-#include "etree/detail/parallel_for.hpp"
+#include "ellipsoid_tree/object_tree.hpp"
+#include "ellipsoid_tree/detail/parallel_for.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 /// Partition the ellipsoids of `tree` (at the tree's tau) into batches of
 /// mutually non-intersecting ellipsoids. anchor_points (one column per
@@ -42,7 +42,7 @@ pick_ellipsoid_batches( const EllipsoidTree&                     tree,
     if ( static_cast<int>(anchor_points.cols()) != n )
     {
         throw std::invalid_argument(
-            "etree::pick_ellipsoid_batches: need one anchor point per ellipsoid");
+            "ellipsoid_tree::pick_ellipsoid_batches: need one anchor point per ellipsoid");
     }
 
     // Pairwise overlap graph, each edge computed once.
@@ -129,4 +129,4 @@ pick_ellipsoid_batches( const EllipsoidTree& tree, int max_batches = -1, int num
     return pick_ellipsoid_batches(tree, anchors, max_batches, num_threads);
 }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

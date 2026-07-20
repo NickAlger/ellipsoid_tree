@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief AABB tree over leaf boxes, with visitor-based traversal and dual-tree collision queries.
@@ -29,9 +29,9 @@
 
 #include <Eigen/Dense>
 
-#include "etree/geometry.hpp"
+#include "ellipsoid_tree/geometry.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 namespace detail {
 
@@ -77,7 +77,7 @@ public:
     {
         if ( leaf_lo.rows() != leaf_hi.rows() || leaf_lo.cols() != leaf_hi.cols() )
         {
-            throw std::invalid_argument("etree::AABBTree::build: leaf_lo and leaf_hi shapes differ");
+            throw std::invalid_argument("ellipsoid_tree::AABBTree::build: leaf_lo and leaf_hi shapes differ");
         }
         dim_        = static_cast<int>(leaf_lo.rows());
         num_leaves_ = static_cast<int>(leaf_lo.cols());
@@ -372,4 +372,4 @@ bool visit_self_pairs( const AABBTree& T,
     return true;
 }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

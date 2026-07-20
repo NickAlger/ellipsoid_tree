@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/plot2d.hpp"
-#include "etree/batch_picker.hpp"
+#include "ellipsoid_tree/plot2d.hpp"
+#include "ellipsoid_tree/batch_picker.hpp"
 #include "test_helpers.hpp"
 
 #include <random>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 namespace {

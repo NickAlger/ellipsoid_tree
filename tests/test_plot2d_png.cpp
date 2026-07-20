@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/plot2d.hpp"
+#include "ellipsoid_tree/plot2d.hpp"
 
 #include <cstdio>
 #include <fstream>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 
 namespace {
 

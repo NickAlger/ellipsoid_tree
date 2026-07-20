@@ -1,5 +1,5 @@
 # SPDX-License-Identifier: MIT
-add_executable(etree_tests
+add_executable(ellipsoid_tree_tests
     test_main.cpp
     test_parallel_for.cpp
     test_minimize_scalar.cpp
@@ -15,8 +15,8 @@ add_executable(etree_tests
     test_lp_cells.cpp
     test_plot2d.cpp
     test_plot2d_png.cpp)
-target_link_libraries(etree_tests PRIVATE etree::etree)
-target_include_directories(etree_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
-target_compile_options(etree_tests PRIVATE
+target_link_libraries(ellipsoid_tree_tests PRIVATE ellipsoid_tree::ellipsoid_tree)
+target_include_directories(ellipsoid_tree_tests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/thirdparty)
+target_compile_options(ellipsoid_tree_tests PRIVATE
     $<$<CXX_COMPILER_ID:GNU,Clang,AppleClang>:-Wall;-Wextra>)
-add_test(NAME etree_tests COMMAND etree_tests)
+add_test(NAME ellipsoid_tree_tests COMMAND ellipsoid_tree_tests)

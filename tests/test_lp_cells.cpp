@@ -1,15 +1,15 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/intersections.hpp"
-#include "etree/object_tree.hpp"
-#include "etree/simplex_mesh.hpp"
+#include "ellipsoid_tree/intersections.hpp"
+#include "ellipsoid_tree/object_tree.hpp"
+#include "ellipsoid_tree/simplex_mesh.hpp"
 #include "test_helpers.hpp"
 
 #include <algorithm>
 #include <random>
 #include <set>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 namespace {

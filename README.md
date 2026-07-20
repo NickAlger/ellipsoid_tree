@@ -1,4 +1,4 @@
-# etree
+# ellipsoid_tree
 
 **Exact intersection tests for ellipsoids and friends.**
 Points, boxes, balls, ellipsoids, and simplices in R^d; single pairs,
@@ -22,7 +22,7 @@ dimension-generic.*
 
 ## The design in one idea
 
-etree is organized around a small closed system:
+ellipsoid_tree is organized around a small closed system:
 
 **Objects.** Five geometric types — `point`, `Box`, `Ball`, `Ellipsoid`,
 `Simplex`. A `Simplex` may be
@@ -83,15 +83,15 @@ exact ellipsoid-box QP on survivors), so acceleration never changes answers.
 - **Supporting cast**: k-nearest-neighbor `KDTree`, axis-alternating
   `geometric_sort`, greedy non-overlapping
   [ellipsoid batch picking](docs/examples/batch_picking.md).
-- **Optional zero-dependency 2D visualization** (`etree/plot2d.hpp`):
+- **Optional zero-dependency 2D visualization** (`ellipsoid_tree/plot2d.hpp`):
   SVG and PNG figures of objects, trees, queries, and CG1 fields. Every
   figure in the documentation is drawn with it.
 
 ## Quick start
 
 ```cpp
-#include "etree/etree.hpp"
-using namespace etree;
+#include "ellipsoid_tree/ellipsoid_tree.hpp"
+using namespace ellipsoid_tree;
 
 Ellipsoid A{mu_a, Sigma_a}, B{mu_b, Sigma_b};
 bool overlap = intersects(A, B, /*tau=*/1.0);
@@ -103,11 +103,11 @@ auto batches = pick_ellipsoid_batches(tree);
 
 ## Installing
 
-**C++** — three equivalent routes, all ending in `target_link_libraries(your_target PRIVATE etree::etree)`:
+**C++** — three equivalent routes, all ending in `target_link_libraries(your_target PRIVATE ellipsoid_tree::ellipsoid_tree)`:
 
 - vendor or FetchContent this repo and `add_subdirectory(ellipsoid_tree)`;
 - or install it: `cmake -S . -B build && cmake --install build --prefix <prefix>`,
-  then `find_package(etree REQUIRED)` from any project with `<prefix>` on
+  then `find_package(ellipsoid_tree REQUIRED)` from any project with `<prefix>` on
   `CMAKE_PREFIX_PATH`;
 - or just add `include/` to your include path (header-only; Eigen required).
 
@@ -115,18 +115,18 @@ Eigen is found via `find_package(Eigen3)`, with an automatic pinned download
 as fallback when building this repo standalone.
 
 **Python** — `pip install ellipsoid-tree` (or `pip install git+https://github.com/NickAlger/ellipsoid_tree`)
-builds the `etree` module via scikit-build-core; points are rows (`(n, d)`
+builds the `ellipsoid_tree` module via scikit-build-core; points are rows (`(n, d)`
 arrays, scipy-style), and figures render inline in Jupyter. Alternatively,
 build the module without pip via
-`cmake -B build -DETREE_BUILD_PYTHON=ON && cmake --build build --target etree_python`.
+`cmake -B build -DELLIPSOID_TREE_BUILD_PYTHON=ON && cmake --build build --target ellipsoid_tree_python`.
 For a worked walkthrough, see the [Python quickstart notebook](examples/python_batch_picking.ipynb).
 
 ## Compile-time and memory
 
-etree is header-only but includes Eigen, so every translation unit that
-includes an etree header pays Eigen's compile cost — roughly 1.5 s and ~180 MB
+ellipsoid_tree is header-only but includes Eigen, so every translation unit that
+includes an ellipsoid_tree header pays Eigen's compile cost — roughly 1.5 s and ~180 MB
 of RAM per file (a precompiled header cuts that to ~0.2 s and ~125 MB). This is
-normal for an Eigen-based library, but it adds up if you include etree in many
+normal for an Eigen-based library, but it adds up if you include ellipsoid_tree in many
 files. On a memory-limited machine, don't over-parallelize the build: keep at
 least ~1 GB of RAM per compile job (for example `cmake --build . -j N` with N no
 larger than your RAM in GB), or set up a precompiled header on your side.
@@ -160,7 +160,7 @@ python3 docs/generate_examples.py   # regenerate the example documentation
 
 ## References and acknowledgements
 
-etree grew out of the point-spread-function probing developed in N. Alger,
+ellipsoid_tree grew out of the point-spread-function probing developed in N. Alger,
 T. Hartland, N. Petra, and O. Ghattas, *Point spread function approximation of
 high-rank Hessians with locally supported nonnegative integral kernels*, SIAM
 Journal on Scientific Computing 46(3), 2024, A1658–A1689 — the origin of the

@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief Concrete spatial indexes over the geometric types: BoxTree, BallTree, EllipsoidTree, SimplexTree.
@@ -33,12 +33,12 @@
 
 #include <Eigen/Dense>
 
-#include "etree/geometry.hpp"
-#include "etree/intersections.hpp"
-#include "etree/aabb_tree.hpp"
-#include "etree/detail/parallel_for.hpp"
+#include "ellipsoid_tree/geometry.hpp"
+#include "ellipsoid_tree/intersections.hpp"
+#include "ellipsoid_tree/aabb_tree.hpp"
+#include "ellipsoid_tree/detail/parallel_for.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 namespace detail {
 
@@ -237,7 +237,7 @@ public:
         {
             if ( objects_[ii].lo.size() != d || objects_[ii].hi.size() != d )
             {
-                throw std::invalid_argument("etree::BoxTree: inconsistent box dimensions");
+                throw std::invalid_argument("ellipsoid_tree::BoxTree: inconsistent box dimensions");
             }
             lo.col(ii) = objects_[ii].lo;
             hi.col(ii) = objects_[ii].hi;
@@ -353,7 +353,7 @@ public:
         {
             if ( objects_[ii].center.size() != d || objects_[ii].radius < 0.0 )
             {
-                throw std::invalid_argument("etree::BallTree: inconsistent dimensions or negative radius");
+                throw std::invalid_argument("ellipsoid_tree::BallTree: inconsistent dimensions or negative radius");
             }
             Box bb = bounding_box(objects_[ii]);
             lo.col(ii) = bb.lo;
@@ -369,7 +369,7 @@ public:
           {
               if ( centers.cols() != radii.size() )
               {
-                  throw std::invalid_argument("etree::BallTree: centers/radii count mismatch");
+                  throw std::invalid_argument("ellipsoid_tree::BallTree: centers/radii count mismatch");
               }
               std::vector<Ball> balls(centers.cols());
               for ( int ii = 0; ii < centers.cols(); ++ii )
@@ -468,7 +468,7 @@ public:
     {
         if ( !(tau > 0.0) )
         {
-            throw std::invalid_argument("etree::EllipsoidTree: tau must be positive");
+            throw std::invalid_argument("ellipsoid_tree::EllipsoidTree: tau must be positive");
         }
         const int n = static_cast<int>(objects_.size());
         const int d = (n > 0) ? static_cast<int>(objects_[0].mu.size()) : 0;
@@ -477,7 +477,7 @@ public:
             if ( objects_[ii].mu.size() != d
                  || objects_[ii].Sigma.rows() != d || objects_[ii].Sigma.cols() != d )
             {
-                throw std::invalid_argument("etree::EllipsoidTree: inconsistent dimensions");
+                throw std::invalid_argument("ellipsoid_tree::EllipsoidTree: inconsistent dimensions");
             }
         }
         sigma_inv_.resize(n);
@@ -511,7 +511,7 @@ public:
     {
         if ( !(new_tau > 0.0) )
         {
-            throw std::invalid_argument("etree::EllipsoidTree::rebuild: tau must be positive");
+            throw std::invalid_argument("ellipsoid_tree::EllipsoidTree::rebuild: tau must be positive");
         }
         tau_ = new_tau;
         rebuild_boxes();
@@ -620,12 +620,12 @@ private:
     {
         if ( !(tau > 0.0) )
         {
-            throw std::invalid_argument("etree::EllipsoidTree: query tau must be positive");
+            throw std::invalid_argument("ellipsoid_tree::EllipsoidTree: query tau must be positive");
         }
         if ( tau > tau_ * (1.0 + 1e-12) )
         {
             throw std::invalid_argument(
-                "etree::EllipsoidTree: query tau exceeds the build tau; call rebuild(new_tau) first");
+                "ellipsoid_tree::EllipsoidTree: query tau exceeds the build tau; call rebuild(new_tau) first");
         }
     }
 
@@ -676,7 +676,7 @@ public:
         {
             if ( objects_[ii].V.rows() != d || objects_[ii].V.cols() < 1 )
             {
-                throw std::invalid_argument("etree::SimplexTree: inconsistent simplex dimensions");
+                throw std::invalid_argument("ellipsoid_tree::SimplexTree: inconsistent simplex dimensions");
             }
             Box bb = bounding_box(objects_[ii]);
             lo.col(ii) = bb.lo;
@@ -706,7 +706,7 @@ public:
               if ( cells.size() > 0
                    && (cells.minCoeff() < 0 || cells.maxCoeff() >= vertices.cols()) )
               {
-                  throw std::invalid_argument("etree::SimplexTree: cell vertex index out of range");
+                  throw std::invalid_argument("ellipsoid_tree::SimplexTree: cell vertex index out of range");
               }
               std::vector<Simplex> simplices(cells.cols());
               for ( int cc = 0; cc < cells.cols(); ++cc )
@@ -962,4 +962,4 @@ inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, c
 inline std::vector<std::pair<int, int>> collision_pairs( const SimplexTree& A, const BoxTree& B )
 { return detail::flip_pairs(collision_pairs(B, A)); }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

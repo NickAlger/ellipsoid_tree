@@ -1,4 +1,4 @@
-# etree API reference {#mainpage}
+# ellipsoid_tree API reference {#mainpage}
 
 **Exact intersection tests for ellipsoids and friends** — points, boxes, balls,
 ellipsoids, and simplices in R^d; single pairs, tree-accelerated queries, and
@@ -14,11 +14,11 @@ see the main documentation on GitHub:
 
 ## Where to start
 
-Include the umbrella header `etree/etree.hpp` and reach for:
+Include the umbrella header `ellipsoid_tree/ellipsoid_tree.hpp` and reach for:
 
-- **Objects** — `etree::Box`, `etree::Ball`, `etree::Ellipsoid`, `etree::Simplex`
-- **Pairwise tests** — the `etree::intersects` overloads
-- **Spatial trees** — `etree::BoxTree`, `etree::BallTree`, `etree::EllipsoidTree`, `etree::SimplexTree`
-- **Meshes & neighbors** — `etree::SimplexMesh`, `etree::KDTree`
+- **Objects** — `ellipsoid_tree::Box`, `ellipsoid_tree::Ball`, `ellipsoid_tree::Ellipsoid`, `ellipsoid_tree::Simplex`
+- **Pairwise tests** — the `ellipsoid_tree::intersects` overloads
+- **Spatial trees** — `ellipsoid_tree::BoxTree`, `ellipsoid_tree::BallTree`, `ellipsoid_tree::EllipsoidTree`, `ellipsoid_tree::SimplexTree`
+- **Meshes & neighbors** — `ellipsoid_tree::SimplexMesh`, `ellipsoid_tree::KDTree`
 
 Use **Classes** and **Files** in the sidebar to browse the full surface.

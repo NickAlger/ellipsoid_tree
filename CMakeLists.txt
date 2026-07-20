@@ -1,33 +1,33 @@
 # SPDX-License-Identifier: MIT
 cmake_minimum_required(VERSION 3.16)
 
-# Version is single-sourced from the public header (see include/etree/etree.hpp).
-file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/etree/etree.hpp" _etree_hpp)
-string(REGEX MATCH "ETREE_VERSION_MAJOR ([0-9]+)" _ "${_etree_hpp}")
-set(_etree_major "${CMAKE_MATCH_1}")
-string(REGEX MATCH "ETREE_VERSION_MINOR ([0-9]+)" _ "${_etree_hpp}")
-set(_etree_minor "${CMAKE_MATCH_1}")
-string(REGEX MATCH "ETREE_VERSION_PATCH ([0-9]+)" _ "${_etree_hpp}")
-set(_etree_patch "${CMAKE_MATCH_1}")
-project(etree VERSION ${_etree_major}.${_etree_minor}.${_etree_patch} LANGUAGES CXX)
+# Version is single-sourced from the public header (see include/ellipsoid_tree/ellipsoid_tree.hpp).
+file(READ "${CMAKE_CURRENT_SOURCE_DIR}/include/ellipsoid_tree/ellipsoid_tree.hpp" _ellipsoid_tree_hpp)
+string(REGEX MATCH "ELLIPSOID_TREE_VERSION_MAJOR ([0-9]+)" _ "${_ellipsoid_tree_hpp}")
+set(_ellipsoid_tree_major "${CMAKE_MATCH_1}")
+string(REGEX MATCH "ELLIPSOID_TREE_VERSION_MINOR ([0-9]+)" _ "${_ellipsoid_tree_hpp}")
+set(_ellipsoid_tree_minor "${CMAKE_MATCH_1}")
+string(REGEX MATCH "ELLIPSOID_TREE_VERSION_PATCH ([0-9]+)" _ "${_ellipsoid_tree_hpp}")
+set(_ellipsoid_tree_patch "${CMAKE_MATCH_1}")
+project(ellipsoid_tree VERSION ${_ellipsoid_tree_major}.${_ellipsoid_tree_minor}.${_ellipsoid_tree_patch} LANGUAGES CXX)
 
-add_library(etree INTERFACE)
-add_library(etree::etree ALIAS etree)
-target_compile_features(etree INTERFACE cxx_std_17)
-target_include_directories(etree INTERFACE
+add_library(ellipsoid_tree INTERFACE)
+add_library(ellipsoid_tree::ellipsoid_tree ALIAS ellipsoid_tree)
+target_compile_features(ellipsoid_tree INTERFACE cxx_std_17)
+target_include_directories(ellipsoid_tree INTERFACE
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>)
 
 find_package(Threads REQUIRED)
-target_link_libraries(etree INTERFACE Threads::Threads)
+target_link_libraries(ellipsoid_tree INTERFACE Threads::Threads)
 
 # Eigen: use an installed copy if available, otherwise download a pinned release.
 find_package(Eigen3 3.3 QUIET NO_MODULE)
 if(NOT TARGET Eigen3::Eigen)
-    option(ETREE_FETCH_EIGEN "Download Eigen if no installed copy is found" ON)
-    if(NOT ETREE_FETCH_EIGEN)
+    option(ELLIPSOID_TREE_FETCH_EIGEN "Download Eigen if no installed copy is found" ON)
+    if(NOT ELLIPSOID_TREE_FETCH_EIGEN)
         message(FATAL_ERROR
-            "etree requires Eigen3. Install it (e.g. libeigen3-dev) or enable ETREE_FETCH_EIGEN.")
+            "ellipsoid_tree requires Eigen3. Install it (e.g. libeigen3-dev) or enable ELLIPSOID_TREE_FETCH_EIGEN.")
     endif()
     if(CMAKE_VERSION VERSION_GREATER_EQUAL 3.24)
         cmake_policy(SET CMP0135 NEW)
@@ -45,29 +45,29 @@ if(NOT TARGET Eigen3::Eigen)
     add_library(Eigen3::Eigen INTERFACE IMPORTED)
     set_target_properties(Eigen3::Eigen PROPERTIES
         INTERFACE_INCLUDE_DIRECTORIES "${eigen3_src_SOURCE_DIR}")
-    message(STATUS "etree: using downloaded Eigen 3.4.0 (${eigen3_src_SOURCE_DIR})")
+    message(STATUS "ellipsoid_tree: using downloaded Eigen 3.4.0 (${eigen3_src_SOURCE_DIR})")
 endif()
-target_link_libraries(etree INTERFACE Eigen3::Eigen)
+target_link_libraries(ellipsoid_tree INTERFACE Eigen3::Eigen)
 
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR)
-    option(ETREE_BUILD_TESTS "Build etree tests" ON)
-    option(ETREE_BUILD_EXAMPLES "Build etree examples" ON)
+    option(ELLIPSOID_TREE_BUILD_TESTS "Build ellipsoid_tree tests" ON)
+    option(ELLIPSOID_TREE_BUILD_EXAMPLES "Build ellipsoid_tree examples" ON)
 else()
-    option(ETREE_BUILD_TESTS "Build etree tests" OFF)
-    option(ETREE_BUILD_EXAMPLES "Build etree examples" OFF)
+    option(ELLIPSOID_TREE_BUILD_TESTS "Build ellipsoid_tree tests" OFF)
+    option(ELLIPSOID_TREE_BUILD_EXAMPLES "Build ellipsoid_tree examples" OFF)
 endif()
 
-if(ETREE_BUILD_TESTS)
+if(ELLIPSOID_TREE_BUILD_TESTS)
     enable_testing()
     add_subdirectory(tests)
 endif()
 
-if(ETREE_BUILD_EXAMPLES)
+if(ELLIPSOID_TREE_BUILD_EXAMPLES)
     add_subdirectory(examples)
 endif()
 
-option(ETREE_BUILD_PYTHON "Build the etree Python bindings (pybind11 via FetchContent)" OFF)
-if(ETREE_BUILD_PYTHON)
+option(ELLIPSOID_TREE_BUILD_PYTHON "Build the ellipsoid_tree Python bindings (pybind11 via FetchContent)" OFF)
+if(ELLIPSOID_TREE_BUILD_PYTHON)
     add_subdirectory(bindings)
 endif()
 
@@ -75,35 +75,35 @@ endif()
 # Default ON when built standalone, OFF as a subproject and OFF inside pip
 # builds (scikit-build-core would otherwise install the headers into the wheel).
 if(CMAKE_CURRENT_SOURCE_DIR STREQUAL CMAKE_SOURCE_DIR AND NOT SKBUILD)
-    set(ETREE_INSTALL_DEFAULT ON)
+    set(ELLIPSOID_TREE_INSTALL_DEFAULT ON)
 else()
-    set(ETREE_INSTALL_DEFAULT OFF)
+    set(ELLIPSOID_TREE_INSTALL_DEFAULT OFF)
 endif()
-option(ETREE_INSTALL "Generate install and CMake package export rules" ${ETREE_INSTALL_DEFAULT})
+option(ELLIPSOID_TREE_INSTALL "Generate install and CMake package export rules" ${ELLIPSOID_TREE_INSTALL_DEFAULT})
 
-if(ETREE_INSTALL)
+if(ELLIPSOID_TREE_INSTALL)
     include(GNUInstallDirs)
     include(CMakePackageConfigHelpers)
 
     install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
-    install(TARGETS etree EXPORT etreeTargets)
-    install(EXPORT etreeTargets
-        FILE etreeTargets.cmake
-        NAMESPACE etree::
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+    install(TARGETS ellipsoid_tree EXPORT ellipsoid_treeTargets)
+    install(EXPORT ellipsoid_treeTargets
+        FILE ellipsoid_treeTargets.cmake
+        NAMESPACE ellipsoid_tree::
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ellipsoid_tree)
 
     configure_package_config_file(
-        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/etreeConfig.cmake.in
-        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfig.cmake
-        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+        ${CMAKE_CURRENT_SOURCE_DIR}/cmake/ellipsoid_treeConfig.cmake.in
+        ${CMAKE_CURRENT_BINARY_DIR}/ellipsoid_treeConfig.cmake
+        INSTALL_DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ellipsoid_tree)
     write_basic_package_version_file(
-        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfigVersion.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ellipsoid_treeConfigVersion.cmake
         VERSION ${PROJECT_VERSION}
         COMPATIBILITY SameMajorVersion
         ARCH_INDEPENDENT)
     install(FILES
-        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfig.cmake
-        ${CMAKE_CURRENT_BINARY_DIR}/etreeConfigVersion.cmake
-        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/etree)
+        ${CMAKE_CURRENT_BINARY_DIR}/ellipsoid_treeConfig.cmake
+        ${CMAKE_CURRENT_BINARY_DIR}/ellipsoid_treeConfigVersion.cmake
+        DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/ellipsoid_tree)
     install(FILES LICENSE DESTINATION ${CMAKE_INSTALL_DOCDIR})
 endif()

@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/kd_tree.hpp"
+#include "ellipsoid_tree/kd_tree.hpp"
 #include "test_helpers.hpp"
 
 #include <algorithm>
 #include <random>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 TEST_CASE("KDTree k-nearest-neighbors against brute force")

@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief Simplicial mesh in R^d (cells are d-simplices): point location with
@@ -25,13 +25,13 @@
 
 #include <Eigen/Dense>
 
-#include "etree/geometry.hpp"
-#include "etree/intersections.hpp"
-#include "etree/object_tree.hpp"
-#include "etree/kd_tree.hpp"
-#include "etree/detail/parallel_for.hpp"
+#include "ellipsoid_tree/geometry.hpp"
+#include "ellipsoid_tree/intersections.hpp"
+#include "ellipsoid_tree/object_tree.hpp"
+#include "ellipsoid_tree/kd_tree.hpp"
+#include "ellipsoid_tree/detail/parallel_for.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 /// Simplicial mesh in R^d (cells are d-simplices) with point location, closest-point, CG1 evaluation, and ellipsoid queries.
 class SimplexMesh
@@ -46,15 +46,15 @@ public:
         dim_ = static_cast<int>(vertices.rows());
         if ( vertices.cols() < 1 )
         {
-            throw std::invalid_argument("etree::SimplexMesh: no vertices");
+            throw std::invalid_argument("ellipsoid_tree::SimplexMesh: no vertices");
         }
         if ( cells.cols() < 1 )
         {
-            throw std::invalid_argument("etree::SimplexMesh: no cells");
+            throw std::invalid_argument("ellipsoid_tree::SimplexMesh: no cells");
         }
         if ( cells.rows() != dim_ + 1 )
         {
-            throw std::invalid_argument("etree::SimplexMesh: cells must have dim+1 vertices");
+            throw std::invalid_argument("ellipsoid_tree::SimplexMesh: cells must have dim+1 vertices");
         }
 
         cell_tree_ = SimplexTree(vertices_, cells_, num_threads);
@@ -247,7 +247,7 @@ public:
         if ( functions_at_vertices.cols() != vertices_.cols() )
         {
             throw std::invalid_argument(
-                "etree::SimplexMesh::eval_cg1: functions_at_vertices needs one column per vertex");
+                "ellipsoid_tree::SimplexMesh::eval_cg1: functions_at_vertices needs one column per vertex");
         }
         const int num_functions = static_cast<int>(functions_at_vertices.rows());
         const int np = static_cast<int>(points.cols());
@@ -313,4 +313,4 @@ private:
     KDTree          boundary_kdtree_;
 };
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

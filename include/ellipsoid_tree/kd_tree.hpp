@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief k-nearest-neighbor search: median-split kd-tree with contiguous leaf blocks.
@@ -19,9 +19,9 @@
 
 #include <Eigen/Dense>
 
-#include "etree/detail/parallel_for.hpp"
+#include "ellipsoid_tree/detail/parallel_for.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 /// k-nearest-neighbor kd-tree over a fixed set of points.
 ///
@@ -83,7 +83,7 @@ public:
     {
         if ( num_neighbors < 1 )
         {
-            throw std::invalid_argument("etree::KDTree::query: num_neighbors must be >= 1");
+            throw std::invalid_argument("ellipsoid_tree::KDTree::query: num_neighbors must be >= 1");
         }
         const int k_eff = std::min(num_neighbors, num_pts_);
         const int num_queries = static_cast<int>(query_points.cols());
@@ -205,4 +205,4 @@ private:
     Eigen::VectorXi perm_i2e_; // internal -> external index
 };
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

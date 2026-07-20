@@ -1,19 +1,19 @@
-# Doxygen configuration for the etree API reference.
+# Doxygen configuration for the ellipsoid_tree API reference.
 # Only non-default options are set; everything else uses Doxygen's defaults.
 # Rendered with the vendored doxygen-awesome-css theme (docs/doxygen-awesome/, MIT).
 # Build from the repository root:  doxygen docs/Doxyfile
 
-PROJECT_NAME           = "etree"
+PROJECT_NAME           = "ellipsoid_tree"
 PROJECT_NUMBER         = 0.1.0
 PROJECT_BRIEF          = "Exact intersection tests for ellipsoids and friends"
 OUTPUT_DIRECTORY       = docs/_build/doxygen
 
 # --- Inputs -------------------------------------------------------------
-INPUT                  = include/etree docs/mainpage.md
+INPUT                  = include/ellipsoid_tree docs/mainpage.md
 FILE_PATTERNS          = *.hpp *.md
 RECURSIVE              = YES
 EXCLUDE_PATTERNS       = */detail/*
-EXCLUDE_SYMBOLS        = *::detail *::detail::* etree::colors etree::colors::* palette_color with_alpha
+EXCLUDE_SYMBOLS        = *::detail *::detail::* ellipsoid_tree::colors ellipsoid_tree::colors::* palette_color with_alpha
 USE_MDFILE_AS_MAINPAGE = docs/mainpage.md
 STRIP_FROM_PATH        = include
 STRIP_FROM_INC_PATH    = include

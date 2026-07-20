@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/detail/parallel_for.hpp"
+#include "ellipsoid_tree/detail/parallel_for.hpp"
 
 #include <atomic>
 #include <cstddef>
@@ -8,7 +8,7 @@
 #include <stdexcept>
 #include <vector>
 
-using etree::detail::parallel_for;
+using ellipsoid_tree::detail::parallel_for;
 
 TEST_CASE("parallel_for visits every index exactly once")
 {

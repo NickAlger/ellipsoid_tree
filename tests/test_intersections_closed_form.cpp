@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/intersections.hpp"
+#include "ellipsoid_tree/intersections.hpp"
 #include "test_helpers.hpp"
 
 #include <random>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 TEST_CASE("point-box and point-ball")

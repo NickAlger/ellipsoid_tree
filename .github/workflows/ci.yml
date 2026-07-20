@@ -52,10 +52,10 @@ jobs:
           python3 -m pip install numpy pytest
       - name: Configure
         run: >
-          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DETREE_BUILD_PYTHON=ON
-          -DETREE_BUILD_TESTS=OFF -DETREE_BUILD_EXAMPLES=OFF
+          cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DELLIPSOID_TREE_BUILD_PYTHON=ON
+          -DELLIPSOID_TREE_BUILD_TESTS=OFF -DELLIPSOID_TREE_BUILD_EXAMPLES=OFF
       - name: Build
-        run: cmake --build build -j $(nproc) --target etree_python
+        run: cmake --build build -j $(nproc) --target ellipsoid_tree_python
       - name: Test
         run: PYTHONPATH=build/bindings python3 -m pytest bindings/tests -q
 
@@ -83,18 +83,18 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: etree.hpp version matches pyproject.toml and CITATION.cff
+      - name: ellipsoid_tree.hpp version matches pyproject.toml and CITATION.cff
         run: |
           python3 - <<'PY'
           import re, sys, tomllib
-          hpp = open("include/etree/etree.hpp").read()
-          def macro(tag): return re.search(rf"ETREE_VERSION_{tag} (\d+)", hpp).group(1)
+          hpp = open("include/ellipsoid_tree/ellipsoid_tree.hpp").read()
+          def macro(tag): return re.search(rf"ELLIPSOID_TREE_VERSION_{tag} (\d+)", hpp).group(1)
           header = f"{macro('MAJOR')}.{macro('MINOR')}.{macro('PATCH')}"
           pyproj = tomllib.load(open("pyproject.toml", "rb"))["project"]["version"]
           cff = re.search(r'(?m)^version:\s*"?([0-9][0-9.]*)"?', open("CITATION.cff").read()).group(1)
-          print(f"etree.hpp={header}  pyproject.toml={pyproj}  CITATION.cff={cff}")
+          print(f"ellipsoid_tree.hpp={header}  pyproject.toml={pyproj}  CITATION.cff={cff}")
           bad = {f: v for f, v in {"pyproject.toml": pyproj, "CITATION.cff": cff}.items() if v != header}
           if bad:
-              sys.exit(f"version mismatch vs etree.hpp ({header}): {bad}")
+              sys.exit(f"version mismatch vs ellipsoid_tree.hpp ({header}): {bad}")
           print("versions consistent")
           PY

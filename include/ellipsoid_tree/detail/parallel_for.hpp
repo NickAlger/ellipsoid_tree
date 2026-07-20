@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 #include <algorithm>
 #include <atomic>
@@ -10,7 +10,7 @@
 #include <thread>
 #include <vector>
 
-namespace etree {
+namespace ellipsoid_tree {
 namespace detail {
 
 inline int hardware_thread_count()
@@ -30,7 +30,7 @@ inline int hardware_thread_count()
 //   num_threads == 1 : run f(begin, end) directly on the calling thread
 //   grain_size  <= 0 : pick a chunk size giving each thread ~8 chunks
 //
-// Defining ETREE_NO_THREADS forces the serial path. If f throws, the first
+// Defining ELLIPSOID_TREE_NO_THREADS forces the serial path. If f throws, the first
 // exception is rethrown on the calling thread after all workers finish;
 // remaining chunks are abandoned.
 template <class F>
@@ -47,7 +47,7 @@ void parallel_for( std::ptrdiff_t begin,
     }
 
     int nt = ( num_threads > 0 ) ? num_threads : hardware_thread_count();
-#ifdef ETREE_NO_THREADS
+#ifdef ELLIPSOID_TREE_NO_THREADS
     nt = 1;
 #endif
     if ( static_cast<std::ptrdiff_t>(nt) > n )
@@ -124,4 +124,4 @@ void parallel_for( std::ptrdiff_t n,
 }
 
 } // end namespace detail
-} // end namespace etree
+} // end namespace ellipsoid_tree

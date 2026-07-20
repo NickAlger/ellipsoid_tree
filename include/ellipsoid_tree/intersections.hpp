@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 /// @file
 /// @brief The pairwise intersection table: intersects(A, B [, tau]) overloads for all
@@ -33,11 +33,11 @@
 #include <Eigen/Dense>
 #include <Eigen/Eigenvalues>
 
-#include "etree/geometry.hpp"
-#include "etree/detail/minimize_scalar.hpp"
-#include "etree/detail/linear_feasibility.hpp"
+#include "ellipsoid_tree/geometry.hpp"
+#include "ellipsoid_tree/detail/minimize_scalar.hpp"
+#include "ellipsoid_tree/detail/linear_feasibility.hpp"
 
-namespace etree {
+namespace ellipsoid_tree {
 
 // ------------------------------------------------------------------
 //  Closest-point machinery (the solver-backed narrow phase)
@@ -69,11 +69,11 @@ closest_point_in_simplex( const Eigen::Ref<const Eigen::VectorXd>& p,
     const int K   = V.cols();
     if ( K < 1 )
     {
-        throw std::invalid_argument("etree::closest_point_in_simplex: simplex has no vertices");
+        throw std::invalid_argument("ellipsoid_tree::closest_point_in_simplex: simplex has no vertices");
     }
     if ( K > 30 )
     {
-        throw std::invalid_argument("etree::closest_point_in_simplex: too many vertices (cost is 2^K)");
+        throw std::invalid_argument("ellipsoid_tree::closest_point_in_simplex: too many vertices (cost is 2^K)");
     }
 
     // Center the vertices at p: for affine coordinates alpha (sum = 1),
@@ -612,7 +612,7 @@ inline bool intersects( const Ellipsoid& A, const Ellipsoid& B, double tau )
     if ( es.info() != Eigen::Success )
     {
         throw std::runtime_error(
-            "etree::intersects(Ellipsoid, Ellipsoid): generalized eigensolve failed (Sigma not SPD?)");
+            "ellipsoid_tree::intersects(Ellipsoid, Ellipsoid): generalized eigensolve failed (Sigma not SPD?)");
     }
     const Eigen::VectorXd lambdas = es.eigenvalues();
     const Eigen::VectorXd v       = es.eigenvectors().transpose() * (A.mu - B.mu);
@@ -718,4 +718,4 @@ inline bool intersects( const Simplex& S, const Segment& seg )           { retur
 /// Overlap test between simplex and box (arguments reversed).
 inline bool intersects( const Simplex& S, const Box& A )                 { return intersects(A, S); }
 
-} // end namespace etree
+} // end namespace ellipsoid_tree

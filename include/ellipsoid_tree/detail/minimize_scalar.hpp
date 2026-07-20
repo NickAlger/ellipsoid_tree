@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 // Brent's method for minimizing a scalar function on an interval, implemented
 // from the algorithm's published description:
@@ -20,7 +20,7 @@
 #include <limits>
 #include <utility>
 
-namespace etree {
+namespace ellipsoid_tree {
 namespace detail {
 
 struct MinimizeScalarOptions
@@ -186,4 +186,4 @@ MinimizeScalarResult minimize_scalar( F&&                   f,
 }
 
 } // end namespace detail
-} // end namespace etree
+} // end namespace ellipsoid_tree

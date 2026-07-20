@@ -14,10 +14,10 @@ two ellipsoids overlap.
 #include <cstdio>
 #include <random>
 
-#include "etree/etree.hpp"
-#include "etree/plot2d.hpp"
+#include "ellipsoid_tree/ellipsoid_tree.hpp"
+#include "ellipsoid_tree/plot2d.hpp"
 
-using namespace etree;
+using namespace ellipsoid_tree;
 
 int main()
 {

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/simplex_mesh.hpp"
+#include "ellipsoid_tree/simplex_mesh.hpp"
 #include "test_helpers.hpp"
 
 #include <random>
 
-using namespace etree;
+using namespace ellipsoid_tree;
 namespace th = test_helpers;
 
 namespace {

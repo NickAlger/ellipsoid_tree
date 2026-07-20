@@ -3,4 +3,4 @@
 #include "doctest/doctest.h"
 
 // Compile-check the umbrella header.
-#include "etree/etree.hpp"
+#include "ellipsoid_tree/ellipsoid_tree.hpp"

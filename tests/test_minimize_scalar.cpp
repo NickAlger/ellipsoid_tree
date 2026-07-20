@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: MIT
 #include "doctest/doctest.h"
-#include "etree/detail/minimize_scalar.hpp"
+#include "ellipsoid_tree/detail/minimize_scalar.hpp"
 
 #include <cmath>
 #include <vector>
 
-using etree::detail::minimize_scalar;
-using etree::detail::MinimizeScalarOptions;
-using etree::detail::MinimizeScalarResult;
+using ellipsoid_tree::detail::minimize_scalar;
+using ellipsoid_tree::detail::MinimizeScalarOptions;
+using ellipsoid_tree::detail::MinimizeScalarResult;
 
 TEST_CASE("quadratic minimum is found precisely")
 {

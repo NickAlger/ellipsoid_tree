@@ -1,6 +1,6 @@
 #pragma once
 // SPDX-License-Identifier: MIT
-// Part of etree — https://github.com/NickAlger/ellipsoid_tree
+// Part of ellipsoid_tree — https://github.com/NickAlger/ellipsoid_tree
 
 // Feasibility of the standard-form system {x >= 0 : A x = b}, decided by a
 // phase-I dense tableau simplex method with Bland's rule (anti-cycling).
@@ -21,7 +21,7 @@
 
 #include <Eigen/Dense>
 
-namespace etree {
+namespace ellipsoid_tree {
 namespace detail {
 
 inline bool linear_feasibility( Eigen::MatrixXd A,
@@ -131,4 +131,4 @@ inline bool linear_feasibility( Eigen::MatrixXd A,
 }
 
 } // end namespace detail
-} // end namespace etree
+} // end namespace ellipsoid_tree
