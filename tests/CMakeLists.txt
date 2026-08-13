@@ -8,6 +8,7 @@ add_executable(ellipsoid_tree_tests
     test_intersections_ellipsoid.cpp
     test_intersections_simplex.cpp
     test_aabb_tree.cpp
+    test_box_forest.cpp
     test_object_trees.cpp
     test_kd_tree.cpp
     test_batch_picker.cpp
