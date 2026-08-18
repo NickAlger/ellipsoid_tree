@@ -6,7 +6,7 @@ build-backend = "scikit_build_core.build"
 [project]
 # Distribution (PyPI) name — matches the repo. The import name is `ellipsoid_tree`.
 name = "ellipsoid-tree"
-version = "0.2.0"
+version = "0.3.0"
 description = "Exact ellipsoid intersection tests and spatial trees (header-only C++ core with Python bindings)"
 readme = "README.md"
 license = { file = "LICENSE" }

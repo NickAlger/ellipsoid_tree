@@ -4,6 +4,15 @@ All notable changes to this project are documented here. The format follows
 [Keep a Changelog](https://keepachangelog.com/), and the project aims to adhere
 to [Semantic Versioning](https://semver.org/).
 
+## [0.3.0] — 2026-08-18
+
+### Added
+- `box_forest.hpp`: compact box-forest summaries of AABB trees (`tree_cut`)
+  and conservative candidate queries against them (`forest_query`) — the
+  pure-geometry half of a distributed halo protocol.
+
+[0.3.0]: https://github.com/NickAlger/ellipsoid_tree/releases/tag/v0.3.0
+
 ## [0.2.0] — 2026-07-20
 
 ### Changed

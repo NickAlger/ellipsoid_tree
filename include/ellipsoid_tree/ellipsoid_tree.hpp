@@ -11,7 +11,7 @@
 // set the project version, and a CI check keeps pyproject.toml / CITATION.cff in
 // sync; ELLIPSOID_TREE_VERSION is the composed "MAJOR.MINOR.PATCH" string.
 #define ELLIPSOID_TREE_VERSION_MAJOR 0
-#define ELLIPSOID_TREE_VERSION_MINOR 2
+#define ELLIPSOID_TREE_VERSION_MINOR 3
 #define ELLIPSOID_TREE_VERSION_PATCH 0
 #define ELLIPSOID_TREE_STRINGIZE_IMPL(x) #x
 #define ELLIPSOID_TREE_STRINGIZE(x)      ELLIPSOID_TREE_STRINGIZE_IMPL(x)
