@@ -10,7 +10,7 @@ authors:
   - family-names: Alger
     given-names: Nick
     email: nalger225@gmail.com
-version: 0.2.0
+version: 0.3.0
 date-released: "2026-07-18"
 license: MIT
 repository-code: "https://github.com/NickAlger/ellipsoid_tree"
